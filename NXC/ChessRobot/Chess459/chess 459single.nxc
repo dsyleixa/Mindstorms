@@ -1,0 +1,1003 @@
+/******************************************************************************/
+//                             Robo-NXT Chess
+//                          CHESS ROBOT for NXT
+//                    inspired by micro-Max (by G. Muller)
+//                    NXC/Bricxcc ab 3.3.8.10 (2011-07-02)
+/******************************************************************************/
+//string version="459robot"
+
+#include "CHESS_AI_ENGINE_H.nxc"
+
+#define debug
+
+
+/******************************************************************************/
+// wire setup ,alias
+/******************************************************************************/
+
+#define  SensorEmergencyTouch  Sensor(S1)
+#define  RCXMMux_Port   S2
+#define  PPS35_Port     S3
+#define  PCF8574_Port   S4
+
+#define  OUT_TT      OUT_A  // turn Table
+#define  OUT_A1      OUT_B  // shoulder
+#define  OUT_A2      OUT_C  // elbow
+
+#define  OUT_HAND    1      // Hand up-med-down (RCX motor) at RCX MMux
+#define  OUT_PValve  2      // Claw open-close (EM pneum valve) at RCX MMux
+#define  OUT_PPump   3      // pneumatic NXT motor pump at RCX MMux
+
+#define  HAND_MOTOR(speed) OUT_MSMux(RCXMMux_Port, OUT_HAND, speed)
+#define  CLAW_MOTOR(speed) OUT_MSMux(RCXMMux_Port, OUT_PValve, speed)
+#define  PUMP_MOTOR(speed) OUT_MSMux(RCXMMux_Port, OUT_PPump, speed)
+
+mutex   tmutex, mmutex;
+string  clrln="                     ";
+string  statusline;
+
+
+/******************************************************************************/
+char     PCF8574[9];         // to store the  mux touchvalues
+#define  PCF8574_ADDR 0x4E   // the PCF8574 touch muxer i2c addr
+
+int PCF8574ReadPort(byte NXTPort, byte I2C_ADDR, byte input) {
+/******************************************************************************/
+    byte cnt = 0x02;
+    byte I2CMsg[];
+    byte inbuf[];
+    byte Address = I2C_ADDR;
+    byte nByteReady = 0;
+    int  result = -1;
+    int loop;
+
+    ArrayBuild(I2CMsg, Address);
+    Wait(1);
+    while (loop == STAT_COMM_PENDING)   {
+          loop = I2CStatus(PCF8574_Port, nByteReady);
+    }
+
+    if (I2CBytes(NXTPort, I2CMsg, cnt, inbuf))   {
+        result = inbuf[1];
+    }
+
+    if( result == (result | (1<<input-1)) )   {
+       result = 0;
+    }
+    else  {
+       result = 1;
+    }
+
+    if(result==-1) {
+      TextOut(0, LCD_LINE1, "Error: Check PCF8574");
+      Wait(500);
+      ClearScreen();
+    }
+    return result;
+}
+
+
+
+
+/******************************************************************************/
+#define MC_FLOAT      0x00
+#define MC_COAST      0x00
+#define MC_FORWARD    0x01
+#define MC_REVERSE    0x02
+#define MC_BRAKE      0x03
+#define RCXMMux_ADDR  0xB4
+
+safecall void MS_MTRMXControl(byte port, byte i2cAddr, byte motorNumber, byte control, byte speed)
+/******************************************************************************/
+{
+	byte location;
+  byte message[20];
+  byte nByteReady = 0;
+
+ 	location = 0x40 + motorNumber*2;
+  ArrayBuild(message, i2cAddr, location, control, speed);
+  while (I2CStatus(RCXMMux_Port, nByteReady) ==  STAT_COMM_PENDING);
+  I2CWrite(port, 0, message);
+  while (I2CStatus(RCXMMux_Port, nByteReady) ==  STAT_COMM_PENDING);
+
+}
+
+
+/******************************************************************************/
+// OUT_MSMux speed= -100...0...+100 : 0=coast, 1000=break
+// muxmot= 1...4
+inline void OUT_MSMux(char NXTport, byte muxmot, int speed)
+/******************************************************************************/
+{
+  byte motcmd=0;
+
+  if (speed>=1000) { motcmd= MC_BRAKE; speed=255; } // <=== special brake value
+  else {
+
+    if (speed>0) { motcmd= MC_FORWARD; speed= speed*255/100; }
+    else
+    if (speed<0) { motcmd= MC_REVERSE; speed=-speed*255/100; }
+    else
+    if (speed==0) { motcmd= MC_COAST; speed=0; }
+
+    if(speed>255) speed=255;
+  }
+
+  MS_MTRMXControl(NXTport, RCXMMux_ADDR, muxmot, motcmd, speed);
+
+}
+
+
+
+/******************************************************************************/
+
+#define maxTT +5300
+#define minTT -5300
+#define minA1     0
+#define maxA1 +5200
+#define minA2 -5900
+#define maxA2     0
+
+
+#define MEnc(m) MotorRotationCount(m)
+#define SRaw(s) SensorRaw(s)
+#define STouch(s) SensorValue(s)
+
+#define SensorT_TT   PCF8574[1]
+#define SensorT_A1   PCF8574[2]
+#define SensorT_A2   PCF8574[3]
+#define SensorT_Cup  PCF8574[4]
+#define SensorT_Cmd  PCF8574[5]
+#define SensorT_Cdn  PCF8574[6]
+
+
+
+
+
+/******************************************************************************/
+// tone signals for debug
+
+int  TONE[7] = {TONE_C4,TONE_E4,TONE_G4,TONE_C5,TONE_E5,TONE_G5,TONE_C6};
+
+
+
+/******************************************************************************/
+int Menu (string text, string choice) {
+/******************************************************************************/
+   int BTN;
+   ClearScreen();
+   TextOut(6*(16-strlen(text))/2,16,text);
+   TextOut(6*(16-strlen(choice))/2, 8,choice);
+   TextOut(0, 0,"< L  ok/ESC   R >", DRAW_OPT_INVERT);
+   BTN=getchar();
+   ClearScreen();
+   return BTN;
+
+}
+
+
+/*forward*/ void RobotTransportFromTo(int START, int TARGET, char board[]);
+
+/*forward*/ task DisplayValues();
+
+
+long tTT[129], tA1[129], tA2[129];                // lookup table for chess sqrs
+
+
+/******************************************************************************/
+// Init +  setup
+/******************************************************************************/
+
+/******************************************************************************/
+void Init(){
+/******************************************************************************/
+  SetLongAbort(true);
+  ResetSleepTimer();
+  SetSleepTimeout(0);
+}
+
+
+
+/******************************************************************************/
+void InitIOports() {
+/******************************************************************************/
+
+  SetSensorTouch(S1);                // (default)
+  SetSensorTouch(PPS35_Port);        // pneumatic pressure sensor
+  SetSensorLowspeed(RCXMMux_Port);   // RCX_RMux  for claw up/md/dn
+  SetSensorLowspeed(PCF8574_Port);   //
+
+  SetMotorRegulationTime (10);
+
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+float PPS35_PSI (byte port) {return ( -0.0574 * SensorRaw(port) + 56.8); }
+int   p_hPa;
+
+task PneumPressurePump()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+	string msg;
+  float  PSI;
+
+	while (true) {
+    PSI  = PPS35_PSI (PPS35_Port);
+    p_hPa= PSI * 68.95;
+
+    if (p_hPa<700)      { PUMP_MOTOR(100);  }
+		else if (p_hPa>850) { PUMP_MOTOR( 0 );  }
+		
+		Wait (500);
+  }
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline int checksum(string s) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    int cs=0;
+    for (int i=0;i<strlen(s);++i) cs+=s[i];
+    return cs;
+}
+
+
+//------------------------------------------------------------------------------
+char CmdRdy;
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void MotorOff(const byte &port)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+   SetOutput(port, Power, 0,
+             OutputMode,  OUT_MODE_COAST,
+             RegMode,     OUT_REGMODE_IDLE,
+             RunState,    OUT_RUNSTATE_IDLE,
+             UpdateFlags, UF_UPDATE_MODE + UF_UPDATE_SPEED);
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Hand_up() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+   CmdRdy=false;
+
+   Wait(1);
+   while(!(SensorT_Cup)) {  // dn pos = S3
+     HAND_MOTOR(-100);
+     Wait(1);
+     if (SensorT_Cup) {
+        HAND_MOTOR(1024);
+        Wait(50);
+     }
+  }
+  HAND_MOTOR(0);
+  
+  CmdRdy=true;
+  Wait(1);
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Hand_md() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  char speed ;
+
+  CmdRdy=false;
+
+  Wait(1);
+  while(!(SensorT_Cmd)) {
+      if(SensorT_Cdn) speed=-100;
+      HAND_MOTOR(speed);
+      Wait(1);
+      if (SensorT_Cmd) {
+        HAND_MOTOR(1024);
+        speed=0;
+        Wait(50);
+      }
+  }
+  HAND_MOTOR(0);
+  
+  CmdRdy=true;
+  Wait(1);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Hand_dn() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  CmdRdy=false;
+
+  Wait(1);
+  while(!(SensorT_Cdn)) {
+      HAND_MOTOR(100);
+      Wait(1);
+      if (SensorT_Cdn) {
+        HAND_MOTOR(1024);
+        Wait(50);
+      }
+  }
+  HAND_MOTOR(0);
+  
+  CmdRdy=true;
+  Wait(1);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void  Claw_open()  { CLAW_MOTOR(-100); Wait(1); }
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void  Claw_close() { CLAW_MOTOR( 100); Wait(1); }
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void  Claw_idle()  { CLAW_MOTOR(  0 ); Wait(1); }
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+/******************************************************************************/
+
+int  D_=0;     // counter for piece drop area
+char F_=1;
+
+/******************************************************************************/
+void RobotMovePiece(int &K, int &L, char turn, char &EP, char &RK, char &board[])
+/******************************************************************************/
+{
+   char PP=0;                                                // move from K to L
+
+   if (board[K]&32) board[K]-=32;       // remove virgin flag
+   if (board[L]) {
+     RobotTransportFromTo(L,127,board); // clear target field
+     D_+=16;
+     if (D_==128)  D_=1;                // next drop area
+     else if (D_==129){ D_=7; F_=-1;}
+     else if (D_==134){ D_=8; F_=-1;}
+     else if (D_&0x88){ D_=0; F_= 1;}
+     tTT[127]=F_*-900+tTT[D_];          // new coord
+     tA1[127]=tA1[D_];
+     tA2[127]=tA2[D_];
+   }
+
+   RobotTransportFromTo(K, L, board);
+   board[L]=board[K];                   // move K -> L
+   board[K]=0;                          // start K=empty
+
+   if (EP) {                            // E.P. move done
+     RobotTransportFromTo(board[board[127]],127,board);   // remove E.P. pawn field
+     board[board[127]]=0;               // delete opponent pawn at E.P. sqr
+     EP=0;                              // delete E.P.
+   }
+   else
+   if (board[126]!=turn) {
+     board[126]=0;                      // delete markers for possible E.P.
+     board[127]=0;
+     board[128]=0;
+   }
+
+   if (RK) {
+     RobotTransportFromTo(board[board[124]], board[board[125]] ,board);
+     board[board[124]]=board[board[125]]&15;
+     board[board[125]]=0;
+     board[125]=0;                      // delete markers for castling=Rochade
+     board[124]=0;
+     RK=0;
+   }
+}
+
+
+
+long TTtarget;
+char TTrdy;
+//------------------------------------------------------------------------------
+task  RotateToTargetTT() {
+//------------------------------------------------------------------------------
+  char port=OUT_TT, pwr=-80;
+  long dabs, oldabs;
+  TTrdy=0;
+
+  while (!(inArea(MEnc(port),TTtarget,5))) {
+    dabs=abs(MEnc(port)-TTtarget);
+    if (dabs>=100) pwr=-80;
+    if (dabs <80) pwr=-dabs;
+    if (dabs<=40) pwr=-30;
+
+    if ((oldabs<=dabs)&&(dabs<80)) pwr-=20;
+    if ((inArea(MEnc(port),TTtarget,5))) { Off(port); Wait(10);}
+    else {
+     if (MEnc(port)<TTtarget) { OnFwd(port,-pwr);}
+     if (MEnc(port)>TTtarget) { OnFwd(port, pwr);}
+    }
+    Wait(3);
+    oldabs=dabs;
+  }
+  Off(port);
+  Wait(50);
+  TTrdy= true;
+}
+
+
+long A1target;
+char A1rdy;
+//------------------------------------------------------------------------------
+task  RotateToTargetA1() {
+//------------------------------------------------------------------------------
+  long dabs, oldabs;
+  char port=OUT_A1, pwr=-100;
+
+  A1rdy=0;
+  while (!(inArea(MEnc(port),A1target,5))) {
+    dabs=abs(MEnc(port)-A1target);
+    if (dabs>=100) pwr=-100;
+    if (dabs<100) pwr=-dabs;
+    if (dabs<=30) pwr=-40;
+
+    if ((oldabs<=dabs)&&(dabs<80)) pwr-=20;
+    if ((inArea(MEnc(port),A1target,5))) { Off(port); Wait(10);}
+    else {
+     if (MEnc(port)<A1target) { OnFwd(port,-pwr);}
+     if (MEnc(port)>A1target) { OnFwd(port, pwr);}
+    }
+    Wait(3);
+    oldabs=dabs;
+  }
+  Off(port);
+  Wait(50);
+  A1rdy= true;
+}
+
+
+long A2target;
+char A2rdy;
+//------------------------------------------------------------------------------
+task  RotateToTargetA2() {
+//------------------------------------------------------------------------------
+  long dabs, oldabs;
+  char port=OUT_A2, pwr=-100;
+
+  A2rdy=0;
+  while (!(inArea(MEnc(port),A2target,5))) {
+    dabs=abs(MEnc(port)-A2target);
+    if (dabs>=100) pwr=-100;
+    if (dabs<100) pwr=-dabs;
+    if (dabs<=40) pwr=-40;
+
+    if ((oldabs<=dabs)&&(dabs<80)) pwr-=20;
+    if ((inArea(MEnc(port),A2target,5))) { Off(port); Wait(10);}
+    else {
+     if (MEnc(port)<A2target) { OnFwd(port,-pwr);}
+     if (MEnc(port)>A2target) { OnFwd(port, pwr);}
+    }
+    Wait(3);
+    oldabs=dabs;
+  }
+  Off(port);
+  Wait(50);
+  A2rdy= true;
+}
+
+
+//------------------------------------------------------------------------------
+task ResetTT() {
+//------------------------------------------------------------------------------
+  char state, speed=70;
+  TTrdy=false;
+  OnFwd(OUT_TT,-speed);
+  Wait(3000);
+  while(!(state==2)) {
+    if (state==0) {
+      OnFwd(OUT_TT, speed);
+      if (SensorT_TT) {
+        Off(OUT_TT);
+        Wait(10);
+        state=1;
+      }
+    }
+    if (state==1) {
+      OnFwd(OUT_TT,-speed);
+      Wait(50);
+      if (!SensorT_TT) {
+        Off(OUT_TT);
+        Wait(10);
+        state=2;
+      }
+    }
+    Wait(1);
+  }
+  Wait(200);
+  if (state==2) ResetRotationCount(OUT_TT);
+  Wait(200); Coast(OUT_TT);
+  TTrdy=true;
+}
+
+
+//------------------------------------------------------------------------------
+task ResetA1() {
+//------------------------------------------------------------------------------
+  char state;
+  A1rdy=false;
+  while(!(state==2)) {
+    if (state==0) {
+      OnFwd(OUT_A1, -100);
+      if (SensorT_A1) {
+        Off(OUT_A1);
+        Wait(10);
+        state=1;
+      }
+    }
+    if (state==1) {
+      OnFwd(OUT_A1,70);
+      Wait(50);
+      if (!SensorT_A1) {
+        Off(OUT_A1);
+        Wait(10);
+        state=2;
+      }
+    }
+    Wait(1);
+  }
+  Wait(200);
+  if (state==2) ResetRotationCount(OUT_A1);
+  Wait(200); Coast(OUT_A1);
+  A1rdy=1;
+}
+
+
+//------------------------------------------------------------------------------
+task ResetA2() {
+//------------------------------------------------------------------------------
+  char state, speed=100;
+  A2rdy=false;
+  while(!(state==2)) {
+    if ((state==0)&&(MEnc(OUT_A1)<2500)) {
+      if (MEnc(OUT_A1)<2500) {OnFwd(OUT_A2, speed);}
+      if (SensorT_A2) {
+        Off(OUT_A2);
+        Wait(10);
+        state=1;
+      }
+    }
+    if (state==1) {
+      OnFwd(OUT_A2,-70);
+      Wait(50);
+      if (!SensorT_A2) {
+        Off(OUT_A2);
+        Wait(10);
+        state=2;
+      }
+    }
+    Wait(1);
+  }
+  Wait(200);
+  if (state==2) ResetRotationCount(OUT_A2);
+  Wait(200); Coast(OUT_A2);
+  A2rdy=1;
+}
+
+
+//------------------------------------------------------------------------------
+void InitLookupTable() {
+//------------------------------------------------------------------------------
+  int p;
+
+//      sqr            OUT_TT               sh.ri             el.le
+    p= 119;  tTT[p]= 1050;       tA1[p]=5210;     tA2[p]=-1880; // h1
+    p= 118;  tTT[p]=  760;       tA1[p]=4700;     tA2[p]=-2535; //
+    p= 117;  tTT[p]=  510;       tA1[p]=4690;     tA2[p]=-2600;
+    p= 116;  tTT[p]=  250;       tA1[p]=4700;     tA2[p]=-2600;
+    p= 115;  tTT[p]=  -30;       tA1[p]=4700;     tA2[p]=-2580;
+    p= 114;  tTT[p]= -234;       tA1[p]=4850;     tA2[p]=-2370;
+    p= 113;  tTT[p]= -500;       tA1[p]=5020;     tA2[p]=-2140;
+    p= 112;  tTT[p]= -740;       tA1[p]=5370;     tA2[p]=-1420; // OUT_A1
+
+    p= 103;  tTT[p]= 1080;       tA1[p]=4180;     tA2[p]=-3235; // h2
+    p= 102;  tTT[p]=  770;       tA1[p]=3945;     tA2[p]=-3485;
+    p= 101;  tTT[p]=  500;       tA1[p]=3930;     tA2[p]=-3535;
+    p= 100;  tTT[p]=  200;       tA1[p]=3895;     tA2[p]=-3570;
+    p=  99;  tTT[p]= -100;       tA1[p]=3920;     tA2[p]=-3640; // d2
+    p=  98;  tTT[p]= -340;       tA1[p]=3985;     tA2[p]=-3535;
+    p=  97;  tTT[p]= -610;       tA1[p]=4180;     tA2[p]=-3375;
+    p=  96;  tTT[p]= -830;       tA1[p]=4370;     tA2[p]=-3090; // OUT_A2
+
+    p=  87;  tTT[p]= 1160;       tA1[p]=3530;     tA2[p]=-3995; // h3
+    p=  86;  tTT[p]=  850;       tA1[p]=3395;     tA2[p]=-4135;
+    p=  85;  tTT[p]=  500;       tA1[p]=3200;     tA2[p]=-4220;
+    p=  84;  tTT[p]=  240;       tA1[p]=3220;     tA2[p]=-4230;
+    p=  83;  tTT[p]=  -80;       tA1[p]=3225;     tA2[p]=-4205;
+    p=  82;  tTT[p]= -380;       tA1[p]=3320;     tA2[p]=-4135;
+    p=  81;  tTT[p]= -690;       tA1[p]=3455;     tA2[p]=-4035;
+    p=  80;  tTT[p]=-1000;       tA1[p]=3630;     tA2[p]=-3830; // a3
+
+    p=  71;  tTT[p]= 1230;       tA1[p]=2905;     tA2[p]=-4455; // h4
+    p=  70;  tTT[p]=  930;       tA1[p]=2840;     tA2[p]=-4665;
+    p=  69;  tTT[p]=  570;       tA1[p]=2840;     tA2[p]=-4665;
+    p=  68;  tTT[p]=  330;       tA1[p]=2655;     tA2[p]=-4730;
+    p=  67;  tTT[p]= -130;       tA1[p]=2710;     tA2[p]=-4750; // d4
+    p=  66;  tTT[p]= -425;       tA1[p]=2825;     tA2[p]=-4610;
+    p=  65;  tTT[p]= -745;       tA1[p]=2870;     tA2[p]=-4525;
+    p=  64;  tTT[p]=-1060;       tA1[p]=3180;     tA2[p]=-4330; // a4
+
+    p=  55;  tTT[p]= 1415;       tA1[p]=2380;     tA2[p]=-4970; // h5
+    p=  54;  tTT[p]= 1000;       tA1[p]=2210;     tA2[p]=-5080;
+    p=  53;  tTT[p]=  605;       tA1[p]=2210;     tA2[p]=-5200;
+    p=  52;  tTT[p]=  240;       tA1[p]=2210;     tA2[p]=-5160;
+    p=  51;  tTT[p]= -150;       tA1[p]=2160;     tA2[p]=-5160;
+    p=  50;  tTT[p]= -490;       tA1[p]=2180;     tA2[p]=-5070;
+    p=  49;  tTT[p]= -860;       tA1[p]=2360;     tA2[p]=-4980;
+    p=  48;  tTT[p]=-1240;       tA1[p]=2530;     tA2[p]=-4760; // a5
+
+    p=  39;  tTT[p]= 1505;       tA1[p]=2055;     tA2[p]=-5290; // h6
+    p=  38;  tTT[p]= 1075;       tA1[p]=1785;     tA2[p]=-5355;
+    p=  37;  tTT[p]=  670;       tA1[p]=1610;     tA2[p]=-5410;
+    p=  36;  tTT[p]=  300;       tA1[p]=1515;     tA2[p]=-5440;
+    p=  35;  tTT[p]= -220;       tA1[p]=1610;     tA2[p]=-5460;
+    p=  34;  tTT[p]= -580;       tA1[p]=1730;     tA2[p]=-5450;
+    p=  33;  tTT[p]= -970;       tA1[p]=1910;     tA2[p]=-5340;
+    p=  32;  tTT[p]=-1300;       tA1[p]=2090;     tA2[p]=-5130; // a6
+
+    p=  23;  tTT[p]= 1700;       tA1[p]=1505;     tA2[p]=-5580; // h7
+    p=  22;  tTT[p]= 1230;       tA1[p]=1215;     tA2[p]=-5650;
+    p=  21;  tTT[p]=  800;       tA1[p]=1340;     tA2[p]=-5830;
+    p=  20;  tTT[p]=  330;       tA1[p]=1120;     tA2[p]=-5770;
+    p=  19;  tTT[p]= -180;       tA1[p]=1068;     tA2[p]=-5740;
+    p=  18;  tTT[p]= -660;       tA1[p]=1260;     tA2[p]=-5830;
+    p=  17;  tTT[p]=-1095;       tA1[p]=1420;     tA2[p]=-5600;
+    p=  16;  tTT[p]=-1480;       tA1[p]=1530;     tA2[p]=-5360; // a7
+
+    p=   7;  tTT[p]= 1975;       tA1[p]=1130;     tA2[p]=-5880; // h8
+    p=   6;  tTT[p]= 1480;       tA1[p]= 920;     tA2[p]=-6100;
+    p=   5;  tTT[p]=  945;       tA1[p]= 935;     tA2[p]=-6100;
+    p=   4;  tTT[p]=  380;       tA1[p]= 900;     tA2[p]=-6100;
+    p=   3;  tTT[p]= -155;       tA1[p]= 775;     tA2[p]=-5960;
+    p=   2;  tTT[p]= -810;       tA1[p]= 930;     tA2[p]=-5960;
+    p=   1;  tTT[p]=-1230;       tA1[p]= 980;     tA2[p]=-5890;
+    p=   0;  tTT[p]=-1685;       tA1[p]=1260;     tA2[p]=-5685; // a8
+
+    p= 128;  tTT[p]=    0;       tA1[p]=   0;     tA2[p]=minA2; // align board
+
+    p= 127; tTT[p]=-900+tTT[0];       tA1[p]=tA1[0];   tA2[p]=tA2[0]; // drop area
+
+}
+
+//------------------------------------------------------------------------------
+void MoveClawTo(int sqr) {
+//------------------------------------------------------------------------------
+  printf1(0, 56, "target sqr=%4d",sqr);
+
+  if (MEnc(OUT_A1)>=(tA1[sqr]-1000) && (MEnc(OUT_A2)>=tA2[sqr])-1000)  {
+
+    TTtarget=tTT[sqr];    start RotateToTargetTT;
+    if(MEnc(OUT_A1)>3000) { A1target=max(tA1[sqr],3000); start RotateToTargetA1; }
+    while (!A1rdy);
+    A1target=tA1[sqr];    start RotateToTargetA1;
+    A2target=tA2[sqr];    start RotateToTargetA2;
+  }
+
+  else  {
+    TTtarget=tTT[sqr];    start RotateToTargetTT;
+
+    A2target=min(MEnc(OUT_A2)+1000,0);    start RotateToTargetA2;
+    Wait(100);
+    while (!A2rdy);
+
+    A1target=tA1[sqr];      start RotateToTargetA1;
+    A2target=tA2[sqr];      start RotateToTargetA2;
+    Wait(100);
+  }
+
+  while (!TTrdy);
+  while (!A1rdy);
+  while (!A2rdy);
+
+  Off(OUT_ABC);
+  while(btn (BTNLEFT));
+  if(btn (BTNRIGHT)) {
+    while(btn (BTNRIGHT));
+    tTT[sqr]= MEnc(OUT_TT);     tA1[sqr]=MEnc(OUT_A1);     tA2[sqr]=MEnc(OUT_A2);
+    PlayTones(sndBlipBlip);
+  }
+  Wait(200);
+
+}
+
+//------------------------------------------------------------------------------
+inline void CheckSquare(int sqr) {
+//------------------------------------------------------------------------------
+
+    Hand_up();      while (!SensorT_Cup);        // hand up!
+
+    MoveClawTo(sqr);  PlayTones(sndChordUp);
+    Coast(OUT_ABC); Wait(200);
+
+    Hand_dn();  while (!SensorT_Cdn);             // hand down!
+
+    while(!btnhit() );                    // wait until Btn pressed
+    if(btn (BTNRIGHT)) {
+      tTT[sqr]= MEnc(OUT_TT);     tA1[sqr]=MEnc(OUT_A1);     tA2[sqr]=MEnc(OUT_A2);
+      PlayTones(sndBlipBlip);
+    }
+    if(btn (BTNLEFT)) return;
+}
+
+//------------------------------------------------------------------------------
+void CalibrateAllSquares() {
+//------------------------------------------------------------------------------
+  int sqr;
+  Claw_open();           // claw open!
+
+  for (sqr=119; sqr>=0; --sqr ) {
+    if (sqr & 0x88) continue;
+    CheckSquare(sqr);
+  }
+}
+
+
+//------------------------------------------------------------------------------
+void Calibrate_9_Squares(){
+//------------------------------------------------------------------------------
+  CheckSquare( 87);
+  CheckSquare( 86);
+  CheckSquare( 85);
+  
+  CheckSquare(100);
+  CheckSquare( 99);
+  CheckSquare( 98);
+  
+  CheckSquare( 84);
+  CheckSquare( 83);
+  CheckSquare( 82);
+
+}
+
+
+//------------------------------------------------------------------------------
+void RobotTransportFromTo(int START, int TARGET, char board[]) {
+//------------------------------------------------------------------------------
+  char BigPiece=0;
+
+  Claw_open();                               // claw open!
+  Hand_up();     Wait(10);  while (!SensorT_Cup);         // hand up!
+
+
+
+  MoveClawTo(START);  PlayTones(sndBuzz);  Coast(OUT_ABC);
+
+  if ( ((board[START]&7)==3)||((board[START]&7)==4)||((board[START]&7)==7) ) {
+    BigPiece=1;
+    Hand_md();  Wait(10);  while (!SensorT_Cmd);          // hand med
+  }
+  else {
+    Hand_dn();  Wait(10);  while (!SensorT_Cdn);          // hand down!
+  }
+  PlayTones(sndBeep);  Coast(OUT_ABC);  Wait(200);
+  
+  Claw_close(); Wait(100);                    // claw close! => grab piece
+  Hand_up();    Wait(10);  while (!SensorT_Cup);          // hand up!
+  
+  MoveClawTo(TARGET);  PlayTones(sndBuzz);  Coast(OUT_ABC);
+  
+  if ( BigPiece ) {
+    Hand_md();  Wait(10);  while (!SensorT_Cmd);
+  }
+  else {
+    Hand_dn();  Wait(10);  while (!SensorT_Cdn);
+  }
+
+  Claw_open();                   // claw open! => drop piece
+  Hand_up();    Wait(10);  while (!SensorT_Cup);         // hand up!
+}
+
+
+
+//------------------------------------------------------------------------------
+void RobotArmsZeroInit() {
+//------------------------------------------------------------------------------
+   statusline="zero init";
+
+   start ResetTT;
+   start ResetA1;
+   Wait(4000);
+   start ResetA2;
+
+   while(!(TTrdy&&A1rdy&&A2rdy));
+   
+   statusline="zero ok  ";
+}
+
+
+//------------------------------------------------------------------------------
+task DisplayValues() {
+//------------------------------------------------------------------------------
+  ClearScreen();
+
+  while(1) {
+    printf1(0,48,"S1%d",PCF8574[1]); printf1(24,48,"OUT_TT%5d",MEnc(OUT_TT)); printf1(66,48,"run%2d",MotorRunState(OUT_TT));
+    printf1(0,40,"S2%d",PCF8574[2]); printf1(24,40,"OUT_A1%5d",MEnc(OUT_A1)); printf1(66,40,"run%2d",MotorRunState(OUT_A1));
+    printf1(0,32,"S3%d",PCF8574[3]); printf1(24,32,"OUT_A2%5d",MEnc(OUT_A2)); printf1(66,32,"run%2d",MotorRunState(OUT_A2));
+    printf1(0,24,"up%d",PCF8574[4]); printf1(24,24,"md%d",PCF8574[5]); printf1(48,24,"dn%d",PCF8574[6]);
+    printf1(0,16,"pr%4d",p_hPa);
+    printf1(0, 0,"%s", statusline);
+    Wait(10);
+  }
+}
+
+
+//------------------------------------------------------------------------------
+task GetPCF8574Values() {
+//------------------------------------------------------------------------------
+  while(true) {
+    //Acquire(tmutex);
+    for (char i=1; i<9; ++i) {
+      PCF8574[i]= PCF8574ReadPort(PCF8574_Port, PCF8574_ADDR, i);
+    }
+    //Release(tmutex);
+    Wait(5);
+  }
+}
+
+
+//------------------------------------------------------------------------------
+task EmergencyStop() {
+//------------------------------------------------------------------------------
+  while(true) {
+    while (SensorEmergencyTouch) {
+    
+      OUT_MSMux(RCXMMux_Port, 1, 0); Wait(1);
+      OUT_MSMux(RCXMMux_Port, 2, 0); Wait(1);
+      OUT_MSMux(RCXMMux_Port, 3, 0); Wait(1);
+      OUT_MSMux(RCXMMux_Port, 4, 0); Wait(1);
+      
+      MotorOff(OUT_A); Wait(1);
+      MotorOff(OUT_B); Wait(1);
+      MotorOff(OUT_C); Wait(1);
+
+      SetSensor(S1, SENSOR_TOUCH); Wait(1); ResetSensor(S1); Wait(1);
+      SetSensor(S2, SENSOR_TOUCH); Wait(1); ResetSensor(S2); Wait(1);
+      SetSensor(S3, SENSOR_TOUCH); Wait(1); ResetSensor(S3); Wait(1);
+      SetSensor(S4, SENSOR_TOUCH); Wait(1); ResetSensor(S4); Wait(1);
+      
+      StopAllTasks();
+    }
+    Wait(50);
+  }
+}
+
+
+
+/******************************************************************************/
+task main(){
+/******************************************************************************/
+  char EP,                            // flag: en passant
+       RK,                            // flag: castling=Rochade
+       CK, CM,                        // flag: check!=Schach! (1&8, 1&16)
+       turn,                          // side on turn
+       chosen;                        // manual or auto move from stdin input;
+  char board[129];                    // Piece K_start-> L_dest
+  int K, L,                           // score local, remote
+      score, rscore1, rscore2, rscore3, idum, buf;
+  char PMOD=0, m1, m2, m3;
+  string s;
+
+
+// init all defauts
+  Init();
+  InitIOports();
+  InitLookupTable();
+
+  start EmergencyStop;
+  start GetPCF8574Values;
+  start PneumPressurePump;
+  start DisplayValues;
+
+// chess robot setup
+
+  Claw_close(); Wait(500);
+  Claw_open();  Wait(500);
+  Hand_up();    while (!SensorT_Cup);
+  
+
+  RobotArmsZeroInit();
+  PlayTones(sndChordUp);            // <<<< blocks if not outcommented
+  
+  
+  // align board center base line
+  Claw_close(); Wait(500);
+
+  
+  statusline="=> sqr. 128  ";
+  MoveClawTo(128);
+  
+  PlayTones(sndChordUp);           // <<<< blocks if not outcommented
+  
+  Coast(OUT_ABC); Wait(200);
+
+  // single chess square alignment
+  Hand_up();  while (!SensorT_Cup);  Claw_open();
+
+  stop DisplayValues; statusline=clrln;
+  buf=Menu("Calibrate ?", "/9  /ALL  /no");
+
+  start DisplayValues;
+  if(buf==BTNLEFT)   Calibrate_9_Squares();
+  else
+  if(buf==BTNCENTER) CalibrateAllSquares();
+  Hand_up();  while (!SensorT_Cup);
+
+  stop DisplayValues;
+  // finished: "real" chess board setup
+
+  // start "virtual" chess board and Hal AI setup
+  EP=RK=CK=CM=0;
+  K=-1; L=-1;
+  turn= 8;                                     // 8=white begins
+  BoardSetup(board);
+
+  ClearScreen();
+  PrintBoard (K, L, turn, CK, CM, RK, board);
+
+  while(true){
+    chosen=false;                              // get choice auto/manually
+
+    //permanent auto mode: outcomment while loop!
+    while (!(chosen=GetHIDinput(K, L, turn, EP, RK, CK, CM, board)));
+                                               // (pass move + flags)
+
+    if (L!=-1) {                               // L>=0: manual move chosen
+      start DisplayValues;
+      RobotMovePiece(K, L, turn, EP, RK, board);
+      stop DisplayValues;
+    }
+    else {                                        // L=-1: auto move required
+
+
+      score=AutoMove(K, L, turn, EP, RK, CK, CM, board, PMOD);    // auto move (local)
+
+      ClearScreen();
+
+      if(turn==8)s="white"; else s="black";
+      TextOut(0,56, s);
+
+
+#ifdef debug
+      getchar();
+#endif
+
+      start DisplayValues;
+      RobotMovePiece(K, L, turn, EP, RK, board);
+      stop DisplayValues;
+    }
+
+    ClearScreen();
+    if(CM) {
+      TextOut(24,40,"GAME OVER");
+      TextOut(18,24,"CHECK MATE/");
+      TextOut(12,16,"KING CAPTURED");
+      PlayTones(sndFuneral);
+      Wait(1000);
+      ClearScreen();
+      PrintBoard (K, L, turn, CK, CM, RK, board);
+      SetLongAbort(true);
+      while(true) {
+        MarkPos(-1, FindKing((24-turn),board), board); Wait(200);
+      }
+    }
+
+    PrintBoard (K, L, (24-turn), CK, CM, RK, board);
+
+    K=-1;
+    L=-1;
+    CursPos=120;
+    turn=24-(turn);          // toggle 8 -> 16 -> 8 ->...
+
+    Wait(1);
+  }
+}
