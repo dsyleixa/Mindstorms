@@ -1,0 +1,500 @@
+/******************************************************************************/
+//                               micro-NeXC
+//                             chess for NXT
+/******************************************************************************/
+//                               BT slave 1
+/******************************************************************************/
+#define debug
+#include "CHESS_HAL_MOVE_GENERATOR.nxc"
+
+    #define BT_CONN   0
+    #define INBOX     1 // requests (motor ctrl, variables)
+    #define OUTBOX_1  2 // sensors (continuously)
+    #define OUTBOX_2  3 //
+    #define MyName "Slave 1"
+
+char PMOD=1;
+
+mutex MUTEX_ARRAYWRITE;
+
+/* forward */ task DisplayValues();
+
+
+/******************************************************************************/
+void Init(){
+/******************************************************************************/
+  SetLongAbort(true);
+  ResetSleepTimer();
+  SetSleepTimeout(0);
+  AUTOMV_RDY=0;
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+safecall int checksum(string s) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    int cs=0;
+    for (int i=0;i<strlen(s);++i) cs+=s[i];
+    return cs;
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//BT Setup
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    long SensorCurrArr;
+    int  SensorValueDecimals[11];  // decimals: 1: (0...9), 4: (-999...9999)
+    long SensorArray[11];
+
+    char MPortArray[3];     //RotateMotorEx(OUT_A, 75, 360, 0, false, true);
+    char MPowrArray[3];
+    int  MAnglArray[3];
+    char MTpctArray[3];
+    bool MSyncArray[3];
+    bool MStopArray[3];
+
+    char __MGrdy=0;
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void InitSensors()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    {
+                                    //  Sensors  S1...S4
+       SetSensorTouch(0);
+       SensorValueDecimals[0]=1;    // Touch Sensor1: 1 decimal ("0" or "1")
+       
+       SetSensorTouch(1);
+       SensorValueDecimals[1]=1;    // Touch Sensor2: 1 decimal ("0" or "1")
+       
+       SetSensorTouch(2);
+       SensorValueDecimals[2]=1;    // Touch Sensor3: 1 decimal ("0" or "1")
+
+       SetSensorTouch(3);
+       SensorValueDecimals[3]=1;    // flag: Move generation ready=1/0
+
+//..............................................................................
+                                    // e.g. "fictive" Sensors / values
+       SensorValueDecimals[4]=3;    // K: -1...128
+
+       SensorValueDecimals[5]=3;    // L: -1...128
+
+       SensorValueDecimals[6]=4;    // score: -999...+999
+
+       SensorValueDecimals[7]=1;    // flag: EP
+
+       SensorValueDecimals[8]=1;    // flag: RK
+
+       SensorValueDecimals[9]=1;    //
+
+       SensorValueDecimals[10]=2;   // dummy
+
+    }
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define PPS35_Port  S4
+#define PneumPump   OUT_C
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+float PPS35_PSI (byte port){  return ( -0.0574 * SensorRaw(port) + 56.8); }
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task PneumPressurePump()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+	string msg;
+  int v,w,r, hPa;
+  float PSI;
+
+	while (true) {
+    r = SensorRaw(PPS35_Port);
+    PSI = PPS35_PSI (PPS35_Port);
+    hPa = PSI * 68.95;
+
+    if(hPa<800)  OnFwd(PneumPump,100); // pneumatic pressure pump
+		else if(hPa>900) Off(PneumPump);
+		Wait (500);
+  }
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void GetSensorValues(int i)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+{
+   if(i<4) Acquire(MUTEX_ARRAYWRITE);
+
+   switch (i) {
+
+          case 0:  SensorCurrArr=Sensor(i);
+                   SensorArray[i] =Sensor(i);
+                   break;
+
+          case 1:  SensorCurrArr=Sensor(i);
+                   SensorArray[i] =Sensor(i);
+                   break;
+
+          case 2:  SensorCurrArr=Sensor(i);     //
+                   SensorArray[i] =Sensor(i);
+                   break;
+
+          case 3:  SensorCurrArr= AUTOMV_RDY;     break;   // flag move ready
+
+          case 4:  SensorCurrArr=SensorArray[4];  break;   // K
+
+          case 5:  SensorCurrArr=SensorArray[5];  break;   // L
+
+          case 6:  SensorCurrArr=SensorArray[6];  break;   // score
+
+          case 7:  SensorCurrArr=SensorArray[7];  break;   // flag EP
+
+          case 8:  SensorCurrArr=SensorArray[8];  break;   // flag RK
+
+          case 9:  SensorCurrArr=0;      break;   // dummy
+
+          case 10: SensorCurrArr=0;      break;   // dummy
+
+   }
+   if(i<4) Release(MUTEX_ARRAYWRITE);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task DisplayValues(){
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   int i;
+   ClearScreen();
+   while (true) {
+     for (i=0; i<3; ++i) {
+       printf1(0,56-i*8,"T%d",i); printf1(30,56-i*8,"%2d",SensorArray[i]);
+     }
+     printf1(0,32,"3Mrdy%2d",SensorArray[3]);
+     printf1(0,24,"4 K  %5d",SensorArray[4]);
+     printf1(0,16,"5 L  %5d",SensorArray[5]);
+     printf1(0, 8,"6 Scr%5d",SensorArray[6]);
+
+     Wait(50);
+   }
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void MotorOff(const byte &port)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+   SetOutput(port, Power, 0,
+             OutputMode,  OUT_MODE_COAST,
+             RegMode,     OUT_REGMODE_IDLE,
+             RunState,    OUT_RUNSTATE_IDLE,
+             UpdateFlags, UF_UPDATE_MODE + UF_UPDATE_SPEED);
+}
+
+
+
+char CmdRdy;
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task OUT_A_up() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   CmdRdy=false;
+   MotorOff(OUT_A);
+   Wait(1);
+   while(!(SensorValue(S3))) {  // dn pos = S3
+     OnFwd(OUT_A, -100);
+     Wait(1);
+     if (SensorValue(S3)) {
+        MotorOff(OUT_A);
+        Wait(50);
+     }
+  }
+  Coast(OUT_A);
+  CmdRdy=true;
+  Wait(1);
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task OUT_A_md() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  char speed ;
+  speed=100;
+  CmdRdy=false;
+
+  MotorOff(OUT_A);
+  Wait(1);
+  while(!(SensorValue(S2))) {
+      if(SensorValue(S1)) speed=-100;
+      OnFwd(OUT_A, speed);
+      Wait(1);
+      if (SensorValue(S2)) {  // dn pos = S1
+        MotorOff(OUT_A);
+        speed=0;
+        Wait(50);
+      }
+  }
+  Coast(OUT_A);
+  CmdRdy=true;
+  Wait(1);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task OUT_A_dn() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  CmdRdy=false;
+  MotorOff(OUT_A);
+  Wait(1);
+  while(!(SensorValue(S1))) {
+      OnFwd(OUT_A, +100);
+      Wait(1);
+      if (SensorValue(S1)) {  // dn pos = S1
+        MotorOff(OUT_A);
+        Wait(50);
+      }
+  }
+  Coast(OUT_A);
+  CmdRdy=true;
+  Wait(1);
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+char aArray_[], bArray_[], cArray_[], dArray_[];
+char board_[129];
+char K_, L_, turn_, EP_, RK_, CK_, CM_;
+int rscore_;
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void RemoteAutoMove(){
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //stop DisplayValues;
+    Wait(1);
+    ClearScreen();
+
+    Acquire(MUTEX_ARRAYWRITE);
+     SensorArray[4]=K_;
+     SensorArray[5]=L_;
+
+     SensorArray[7]=EP_;
+     SensorArray[8]=RK_;
+    Release(MUTEX_ARRAYWRITE);
+
+    PrintBoard(K_, L_, turn_, CK_, CM_, RK_, board_);
+    rscore_=AutoMove(K_, L_, turn_, EP_, RK_, CK_, CM_, board_, PMOD);
+
+    Wait(1);
+
+    Acquire(MUTEX_ARRAYWRITE);
+     SensorArray[4]=K_;
+     SensorArray[5]=L_;
+     SensorArray[6]=rscore_;
+     SensorArray[7]=EP_;
+     SensorArray[8]=RK_;
+    Release(MUTEX_ARRAYWRITE);
+
+    Wait(1);
+    TextOut(0,24, MyName);      printf1(54,24,"rdy:%2d", AUTOMV_RDY);
+    printf1(0,16,"K%4d",  K_);  printf1(54,16,"L%4d",    L_);
+    printf1(0, 8,"EP%3d" ,EP_); printf1(54, 8,"RK%3d",   RK_);
+    printf1(0, 0,"scr%5d",rscore_);
+#ifdef debug
+    Wait(2000);
+#endif
+
+    start DisplayValues;
+}
+
+
+string __cmd;
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task ExecCmd()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+      char initial, port=0, power=0, turnpct=0, synch=0, stopp=0;
+      int  i, angle=0;
+      string sport,  spower,  sangle,  sturnpct,  ssynch,  sstopp, sbuf;
+
+      initial=__cmd[0];
+                                      // F: OnFwd
+      if (initial=='F')  {
+         sport=SubStr(__cmd, 1, 4);
+         port=StrToNum(sport);        //TextOut(0,48, sport);
+         spower=SubStr(__cmd, 5, 4);
+         power=StrToNum(spower);      //TextOut(0,40, spower);
+
+         MotorOff(port); Wait(1);
+         OnFwd( port, power);
+         Wait(1);
+      }
+
+
+      if (initial=='0')  {            // 0: OUT_A_up
+         start OUT_A_up;
+         Wait(1);
+         //while(!CmdRdy);
+      }
+
+
+      if (initial=='1')  {            // 1: OUT_A_md
+         start OUT_A_md;
+         Wait(1);
+         //while(!CmdRdy);
+      }
+
+
+      if (initial=='2')  {            // 0: OUT_A_dn
+         start OUT_A_dn;
+         Wait(1);
+         //while(!CmdRdy);
+      }
+
+                                                  // [: array 1st part
+      if (initial=='[')                           // transfered board 0-42
+      {
+         stop DisplayValues;
+         Wait(1);
+         ClearScreen();
+         sbuf=SubStr(__cmd,1,strlen(__cmd)-1);
+         StrToByteArray(sbuf, aArray_);
+         printf1(0,48, "%s%", sbuf);
+         Wait(1);
+      }
+
+                                                  // #: array 2nd part
+      if (initial=='#')                           // transfered board 43-85
+      {
+         sbuf=SubStr(__cmd,1,strlen(__cmd)-1);
+         StrToByteArray(sbuf, bArray_);
+         printf1(0,40, "%s%", sbuf);
+         Wait(1);
+      }
+
+                                                  // ]: array 3rd part
+      if (initial==']')                           // transfered board 86-129
+      {
+         sbuf=SubStr(__cmd,1,strlen(__cmd)-1);
+         StrToByteArray(sbuf, cArray_);
+         ArrayBuild(board_,aArray_,bArray_,cArray_);
+         printf1(0,32, "%s%", sbuf);
+         Wait(1);
+      }
+
+                                                  // &: additional board values
+      if (initial=='&')                           // transfered moves and flags
+      {
+         StrToByteArray(__cmd, dArray_);
+         K_=   dArray_[1];
+         L_=   dArray_[2];
+         turn_=dArray_[3];
+         EP_=  dArray_[4];
+         RK_=  dArray_[5];
+         CK_=  dArray_[6];
+         CM_=  dArray_[7];
+         printf1(0,48, "%s%", __cmd);
+         Wait(1);
+      }
+
+      if (initial=='$')                           // $: start chess AI auot move
+      {
+         //stop DisplayValues;
+         Wait(1);
+         AUTOMV_RDY=0;
+         PlayTones(sndTaDaa);
+         RemoteAutoMove();
+         Wait(1);
+      }
+
+      __cmd="";
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void BTCheck()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  do  {
+    printf("%s", "searching BT master");
+    Wait(50);
+  } while (BluetoothStatus(0)!=NO_ERR)
+  printf("%s", "BT master connected");
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task BTReceive() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  string in;
+  int ack, len;
+
+  while(true) {
+    in= "     ' '       ";
+
+    if (ReceiveRemoteString(INBOX, true, in) != STAT_MSG_EMPTY_MAILBOX)
+    {
+       ack=checksum(in);
+       SendResponseNumber(OUTBOX_2, ack);   // error check
+       Wait(1);
+       __cmd=in;
+       start ExecCmd;
+    }
+    Wait(5);
+  }
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task BTMBxWrite() {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  string sp, sn, svv;
+  string fmtstr, buf, out;
+  int i, dec;
+
+
+  while(true)   {
+     out="";
+     for(i=0; i<11; i++)   // Sensorports: 0...3  plus virtual ports
+     {
+        GetSensorValues(i);
+        Wait(1);
+
+        dec=SensorValueDecimals[i];
+        sn=NumToStr(dec);                          // value decimals
+        fmtstr=StrCat("%",NumToStr(dec),"d");
+        svv=FormatNum(fmtstr,SensorCurrArr);
+
+        out = StrCat(out, sn, svv);
+
+     } //  for port=...
+
+     if (StrLen(out)>58) strncpy(out,out,58);     // 58 = max msg length
+     SendResponseString(OUTBOX_1, out);
+#ifdef debug
+      //TextOut(0, 0, out);
+#endif
+
+     Wait(20);
+
+  } // while(true)
+}
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task main()   {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+  Init();
+  InitSensors();
+      
+  start PneumPressurePump;
+  Wait(500);
+
+  BTCheck();                                  // for slaves
+  ClearScreen();
+
+  start BTMBxWrite;
+  start BTReceive;
+  start DisplayValues;
+
+  while(1);
+
+} // task main
+

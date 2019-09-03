@@ -1,0 +1,1336 @@
+/******************************************************************************/
+//                             Robo-NXT Chess
+//                          CHESS ROBOT for NXT
+//                    inspired by micro-Max (by G. Muller)
+//                    NXC/Bricxcc ab 3.3.8.10 (2011-07-02)
+/******************************************************************************/
+//string version="428RoBTMaster"
+
+#include "CHESS_HAL_MOVE_GENERATOR.nxc"
+
+#define debug
+
+
+/******************************************************************************/
+int Menu (string text, string choice) {
+/******************************************************************************/
+   int BTN;
+   ClearScreen();
+   TextOut(6*(16-strlen(text))/2,16,text);
+   TextOut(6*(16-strlen(choice))/2, 8,choice);
+   TextOut(0, 0,"< L  ok/ESC   R >", DRAW_OPT_INVERT);
+   BTN=getchar();
+   ClearScreen();
+   return BTN;
+
+}
+
+
+/*forward*/ void BTSendBoard(char K, char L, char turn,
+                             char EP, char RK, char CK, char CM,
+                             char board[], byte ID);
+                             
+/*forward*/ void RobotTransportFromTo(int START, int TARGET, char board[]);
+
+/*forward*/ task DisplayValues();
+
+
+long tTT[129], tA1[129], tA2[129];
+
+
+/******************************************************************************/
+// Init +  setup
+/******************************************************************************/
+
+
+/******************************************************************************/
+void Init(){
+/******************************************************************************/
+  SetLongAbort(true);
+  ResetSleepTimer();
+  SetSleepTimeout(0);
+}
+
+/******************************************************************************/
+void InitIOports() {
+/******************************************************************************/
+  SetSensor(0, SENSOR_TOUCH);
+  SetSensor(1, SENSOR_TOUCH);
+  SetSensor(2, SENSOR_TOUCH);
+  SetSensor(3, SENSOR_TOUCH);
+  SetMotorRegulationTime (10);
+}
+
+
+/******************************************************************************/
+// HID unit:    choose - |auto mode|  - or -  |take piece manually|
+/******************************************************************************/
+
+/******************************************************************************/
+char GetHIDinput(int &K, int &L, char turn,
+                 char &EP, char &RK, char &CK, char &CM, char &board[]){
+/******************************************************************************/
+    char valid, buf, chosen,
+         uK, LK, OtherTurn, tboard[129], uboard[129];;
+
+//..............................................................................
+    key=-1;
+    chosen=false;
+    OtherTurn=24-(turn);
+
+    if  (CursPos==120)  {SetAbortFlag(BTNSTATE_LONG_PRESSED_EV); }
+    else                {SetAbortFlag(BTNSTATE_NONE); }
+
+    MarkPos(K, CursPos, board);
+
+    if (btnhit()) {
+      PlayTones(sndBlip);
+      key=btnin();
+    }
+//..............................................................................
+//..............................................................................
+
+    if (((key==BTNLEFT) || (key==BTNRIGHT))&&(L==-1)) {
+      if (key==BTNLEFT) {
+        if (CursPos==0)  CursPos=120;
+        else
+        if (CursPos>0) {
+          CursPos--;
+          if (CursPos&8)  CursPos-=8;
+        }
+      }
+      else
+      if (key==BTNRIGHT){
+        if (CursPos>=120) CursPos=0;
+        else
+        if (CursPos==119) CursPos=120;  // border field for choice: auto move!
+        else {
+          CursPos++;
+          if ((CursPos)&8) CursPos+=8;
+        }
+      }
+      if (CursPos==120) {
+        TextOut(68,32,"     ");
+        TextOut(68,24,"     ");
+        TextOut(68,16,"     ");
+        TextOut(68, 8,"     ");
+      }
+      else if ((K==-1)&&(CursPos!=120)) {
+        TextOut(68,32, SubStr(pieces, board[CursPos]&15,1)+num2anot(CursPos)+"  ");
+        printf1(68,16, "K %3d", CursPos);
+        printf1(68, 0, "p %3d",board[CursPos]);
+      }
+      else if (K>=0) {
+        TextOut(68,32, SubStr(pieces, board[K]&15,1)+num2anot(K)+num2anot(CursPos));
+        printf1(68,16, "K %3d", K);
+        printf1(68, 8, "L %3d", CursPos);
+        printf1(68, 0, "p %3d", board[CursPos]);
+      }
+    }
+
+//..............................................................................
+//..............................................................................
+
+    else
+    if (key==BTNCENTER) {
+
+      if ((K==-1 ) && (L==-1 )) {                      // nothing chosen yet
+                                                           // choice = start!
+        if (CursPos==120) {                                // auto play
+           PlayTones(sndBoop);
+           chosen=true;
+        }
+        else                                               // try to take piece
+        {
+           if (!board[CursPos]) PlayTones(sndError);        // invalid- empty field
+           else
+           if (!(board[CursPos]&turn)) PlayTones(sndError); // invalid- not his turn
+
+          else {                                          // K valid chosen
+             K=CursPos;
+             buf=board[K];
+             PlayTones(sndBlipBlip);
+             TextOut(68,32, SubStr(pieces, board[K]&15,1)+num2anot(K));
+             printf1(68,16, "K %3d", CursPos);
+             printf1(68, 0, "p %3d", board[CursPos]);
+           }
+        }
+      }
+
+      else
+
+      if ((K!=-1 ) && (L==-1 )) {                 // start ok, no dest yet
+
+        if (K==CursPos)  PlayTones(sndError);     // choice: invalid (start=dest)
+
+
+//..............................................................................
+        else {                                    // choice: destination
+          valid=true;
+          ArrayBuild(tboard, board);
+
+          MovePiece(K, CursPos, turn, EP, RK, tboard); // virtual test move
+          LK=FindKing(turn,tboard);
+//..............................................................................
+          // recognizes: discovered check of own king by own piece
+          if (FieldInCheck(turn, LK, tboard)) valid=false; // forbidden move
+
+          if (valid) valid=ValidityTest(K,CursPos,turn,board);
+
+          if (valid) {
+            PlayTones(sndBeep);
+
+//..............................................................................
+            if(valid) L=CursPos;
+            if(valid==2) {   EP=1;  }                     // flag: En Passant
+            if(valid==3) {   RK=1;  }                     // flag: Castling
+
+            printf1(68, 8, "%4d", L);
+
+            if (((board[L]&7)==4)&& !(board[L]&turn)) {   // dest=opponent King
+                    CM=24-(turn);
+            }
+
+//..............................................................................
+            // recognizes:   KING CAPTURE / CHECK MATE!
+            LK=FindKing(OtherTurn,board); // find opponent king at sqr(LK)
+
+            if(L==LK) {                   // opp. king already put in CHECK! ?
+              CM=OtherTurn;
+              return chosen;              // KING CAPTURE! CHECK MATE!
+            }
+//..............................................................................
+            // recognizes: discovered check of opp. king by own piece
+             ArrayBuild(uboard, board);    // copy board for test search
+             MovePiece(K, L, turn, buf, buf, uboard);
+                                           // opponent king put in CHECK! ??
+             buf=FieldInCheck(OtherTurn, LK, uboard);   // LK = opponent king
+             if (buf) {
+               CK=OtherTurn;
+             }
+             else CK=0;
+
+          }
+
+//..............................................................................
+          else PlayTones(sndError);       // invalid validity test
+        }
+      }
+//..............................................................................
+      else
+      if ((K!=-1)&&(L!=-1)&&(K!=L))  {    // choice: valid, ready to move
+        PlayTones(sndChord);
+        chosen=true;
+      }
+    }
+
+//..............................................................................
+//..............................................................................
+
+    else
+    if (key==BTNEXIT) {
+
+      if ((K==-1 ) && (L==-1 ) && (CursPos!=120)) {  // Cursor scroll up
+        if (!((CursPos-16)&0x88)) CursPos-=16;
+        else
+        CursPos=CursPos+112;
+        TextOut(68,32, SubStr(pieces, board[CursPos]&15,1)+" "+num2anot(CursPos));
+        printf1(68,16, "K %3d", CursPos);
+        Wait(100);
+      }
+
+      if ((K!=-1 ) && (L!=-1 )) {          // choice: undo destination
+        PlayTones(sndBuzz);
+        L=-1;
+        TextOut(68, 16, "      ");
+      }
+      else
+      if ((K!=-1 ) && (L==-1 )) {          // choice: undo choose piece
+        PlayTones(sndBuzz);
+        K=-1;
+        TextOut(68, 24, "      ");
+        TextOut(68,  8, "      ");
+        board[K]=buf;                      // in case: reset virgin bit
+      }
+    }
+
+//..............................................................................
+
+    if(CursPos==120)
+      TextOut(68, 0," auto");                     // AI auto mode
+    else
+      printf1(68, 0, "p %3d", board[CursPos]);    // sqr value = piece code
+//..............................................................................
+
+
+    return chosen;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// BT MASTER
+// v.042
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define BT_CONN_1 1 // Slave 1
+#define OUTBOX_1  1 // out
+#define INBOX_11  2 // sensors (continuously)
+#define INBOX_12  3 // motors, values (requested)
+
+#define BT_CONN_2 2 // Slave 2
+#define OUTBOX_2  4 // out
+#define INBOX_21  5 // sensors (continuously)
+#define INBOX_22  6 // motors, values (requested)
+
+#define BT_CONN_3 3 // Slave 3
+#define OUTBOX_3  7 // out
+#define INBOX_31  8 // sensors (continuously)
+#define INBOX_32  9 // motors, values (requested)
+
+
+long SensorRemoteArray[3][11];  // [3 slaves][10 "sensors"][4 values each]
+#define BT1_Sensor1  SensorRemoteArray[0][S1]
+#define BT1_Sensor2  SensorRemoteArray[0][S2]
+#define BT1_Sensor3  SensorRemoteArray[0][S3]
+#define BT1_Sensor4  SensorRemoteArray[0][S4]
+
+#define BT1_AutoMvRdy SensorRemoteArray[0][3]
+#define BT1_AutoMv_K  SensorRemoteArray[0][4]
+#define BT1_AutoMv_L  SensorRemoteArray[0][5]
+#define BT1_AutoMvScr SensorRemoteArray[0][6]
+#define BT1_AutoMv_EP SensorRemoteArray[0][7]
+#define BT1_AutoMv_RK SensorRemoteArray[0][8]
+
+#define BT2_AutoMvRdy SensorRemoteArray[1][3]
+#define BT2_AutoMv_K  SensorRemoteArray[1][4]
+#define BT2_AutoMv_L  SensorRemoteArray[1][5]
+#define BT2_AutoMvScr SensorRemoteArray[1][6]
+#define BT2_AutoMv_EP SensorRemoteArray[1][7]
+#define BT2_AutoMv_RK SensorRemoteArray[1][8]
+
+
+char   _NOS_;                        // Number of Slaves
+string _OUT_;                        // BT out string to send
+char   _ID_, _INBOX_, _OUTBOX_;       // COMM and Mailboxes
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline int checksum(string s) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    int cs=0;
+    for (int i=0;i<strlen(s);++i) cs+=s[i];
+    return cs;
+}
+
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline long GetMuxSensorValue(char slaveID, char port)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+     long MyValue;
+     MyValue= SensorRemoteArray[slaveID][port];
+     return MyValue;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void ParseBTResponseMsg(char ID, string str)  // slaveID=0...2
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+    string pstr, rstr, vstr, sp, sn;
+    int i, n, len, v;
+
+    len=strlen(str);   //
+
+    for (i=0; i<11; ++i)    {
+       sn=SubStr(str,0,1);       // dec
+       n=StrToNum(sn);
+
+       vstr=SubStr(str, 1, n);   // n= length of value string
+       v=StrToNum(vstr);
+       SensorRemoteArray[ID][i]=v;
+
+       rstr=SubStr(str, 1+n, len);
+       str=rstr;
+       len=strlen(str);
+    }
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+task ReceiveSlaveData()    // NOS = Number of Slaves
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+   string slvmsg;
+   int ack, ch;
+
+   while(true)   {
+     if (_NOS_>=1) {
+       until(ReceiveRemoteString(INBOX_11, true, slvmsg) == NO_ERR);
+       ParseBTResponseMsg(0, slvmsg) ;
+       Wait(10);
+     }
+
+     if (_NOS_>=2) {
+       until(ReceiveRemoteString(INBOX_21, true, slvmsg) == NO_ERR);
+       ParseBTResponseMsg(1, slvmsg) ;
+       Wait(10);
+     }
+
+     if (_NOS_==3) {
+       until(ReceiveRemoteString(INBOX_31, true, slvmsg) == NO_ERR);
+       ParseBTResponseMsg(2, slvmsg) ;
+       Wait(10);
+      }
+      
+      ack=0;
+      if (_OUT_ != "") {
+        ch=checksum(_OUT_);
+        while(ack!=ch)  {
+            do { Wait(1); } while (BluetoothStatus(_ID_) != NO_ERR);
+            SendRemoteString(_ID_, _OUTBOX_, _OUT_);
+            do { Wait(1); } while (BluetoothStatus(_ID_) != NO_ERR);
+            ReceiveRemoteNumber(_INBOX_, true, ack);
+            Wait(1);
+        }
+      }
+      _OUT_="";
+
+      Wait(10);
+   }
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+safecall void SetBTSendParam(char ID, string cmd) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  _ID_     = ID;
+  _INBOX_  = 3*ID;
+  _OUTBOX_ = _INBOX_ -2;
+  _OUT_    = cmd;
+
+}
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BTOnFwd(byte ID, byte outp, char powr)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd="F";
+  string  soutp, spowr;
+  char len, INBOX, OUTBOX;
+
+  soutp= NumToStr(outp);
+  len=strlen(soutp);
+  while (len<4)
+  {
+     soutp=StrCat(" ",soutp);
+     len=strlen(soutp);
+  }
+
+  spowr= NumToStr(powr);
+  len=strlen(spowr);
+  while (len<4)   {
+     spowr=StrCat(" ",spowr);
+     len=strlen(spowr);
+  }
+
+  cmd=StrCat(cmd,soutp,spowr);
+
+  SetBTSendParam(ID, cmd);
+
+}
+
+#define CLAW            OUT_B  // BT motor for hand up/dn at remote NXT OUT_B
+#define BT_CLAW_open()  BTOnFwd(1, CLAW, -100);
+#define BT_CLAW_close() BTOnFwd(1, CLAW,  100);
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BT_HAND_up()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd="0";
+  string  outp, spowr;
+  char len, INBOX, OUTBOX, ID=1;
+
+  SetBTSendParam(ID, cmd);
+
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BT_HAND_md()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd="1";
+  string  soutp, spowr;
+  char len, INBOX, OUTBOX, ID=1;
+
+  SetBTSendParam(ID, cmd);
+}
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BT_HAND_dn()
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd="2";
+  string  soutp, spowr;
+  char len, INBOX, OUTBOX, ID=1;
+
+  SetBTSendParam(ID, cmd);
+
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BTStop(byte ID, byte outp)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd="S";
+  string  soutp;
+  char len, INBOX, OUTBOX;
+
+  soutp= NumToStr(outp);
+  len=strlen(soutp);
+  while (len<4)  {
+     soutp=StrCat(" ",soutp);
+     len=strlen(soutp);
+  }
+
+  cmd=StrCat(cmd,soutp);
+
+  SetBTSendParam(ID, cmd);
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BTCoast(byte ID, byte outp)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd="C";
+  string  soutp;
+  char len, INBOX, OUTBOX;
+
+  soutp= NumToStr(outp);
+  len=strlen(soutp);
+  while (len<4) {
+     soutp=StrCat(" ",soutp);
+     len=strlen(soutp);
+  }
+
+  cmd=StrCat(cmd,soutp);
+
+  SetBTSendParam(ID, cmd);
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+inline void BTSendArray(byte ID, string part, byte outp[])
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  string  buf, cmd;
+  string  soutp;
+  char INBOX, OUTBOX;
+
+  soutp= ByteArrayToStr(outp);
+  cmd=StrCat(part,soutp);
+
+  SetBTSendParam(ID, cmd);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void BTSendBoard(char K, char L, char turn,
+                 char EP, char RK, char CK, char CM,
+                 char board[], byte ID) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  char part[];
+  int i;
+
+  ClearScreen();
+  TextOut(64,56,"Send"); NumOut(88,56, ID);
+
+  ArraySubset(part, board, 0,43);             // board 0-42
+  Wait(10);
+  TextOut(0,48,FlattenVar(part));
+  BTSendArray(ID, "[", part);
+  Wait(10);
+
+  ArraySubset(part, board,43,43);             // board 43-85
+  Wait(10);
+  TextOut(0,40,FlattenVar(part));
+  BTSendArray(ID, "#", part);
+  Wait(10);
+
+  ArraySubset(part, board,86,43);             // board 86-129
+  Wait(10);
+  TextOut(0,32,FlattenVar(part));
+  BTSendArray(ID, "]", part);
+  Wait(10);
+
+  ArrayBuild (part, K, L, turn, EP, RK, CK, CM);  // board moves and flags
+  for(i=1;i<=7;++i) { NumOut(0,56-8*(i),part[i-1]); }
+  Wait(10);
+  TextOut(0,24,FlattenVar(part));
+  BTSendArray(ID, "&", part);
+  Wait(10);
+  
+  ClearScreen();
+  PrintBoard(K, L, turn, CK, CM, RK, board);
+  Wait(1);
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void BTAutoMove(byte ID) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  char part[]={'A'};                            // dummy
+  BTSendArray(ID, "$", part);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void BTConnect(int conn)// pass 1, 2, or 3 for the each slave one after the other
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  printf1(0,56-8*conn,"searching slv %d", conn);
+
+  do {
+    CommExecuteFunctionType args2;
+    args2.Cmd = INTF_CONNECT;
+    args2.Param1 = conn-1; // device index
+    args2.Param2 = conn;   // connection index
+    SysCommExecuteFunction(args2);  // make the connection
+    Wait(30);
+  }
+  while (BluetoothStatus(conn)==STAT_COMM_PENDING) ;
+
+  printf("connected: slv %d", conn);
+  PlayTone(TONE_G4, 50);   Wait(50);
+  PlayTone(TONE_C5,100);   Wait(100);
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void   StartBTMuxNetwork(int Number_oD_Slaves)  // NOS=Number Of Slaves
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+   _NOS_= Number_oD_Slaves;  //_NOS_ global var used by task ReceiveSlaveData()
+
+   if (_NOS_ >=1) BTConnect(BT_CONN_1);
+   if (_NOS_ >=2) BTConnect(BT_CONN_2);
+   if (_NOS_ ==3) BTConnect(BT_CONN_3);
+
+   start ReceiveSlaveData;
+}
+
+
+//------------------------------------------------------------------------------
+#define TT 0
+#define A1 1
+#define A2 2
+#define maxTT +5300
+#define minTT -5300
+#define minA1     0
+#define maxA1 +5200
+#define minA2 -5900
+#define maxA2     0
+
+#define MEnc(m) MotorRotationCount(m)
+#define SRaw(s) SensorRaw(s)
+#define STouch(s) SensorValue(s)
+//------------------------------------------------------------------------------
+
+
+int  D_=0;     // counter for piece drop area
+char F_=1;
+/******************************************************************************/
+void RobotMovePiece(int &K, int &L, char turn, char &EP, char &RK, char &board[]) {
+/******************************************************************************/
+  char PP=0;                                                // move from K to L
+
+   if (board[K]&32) board[K]-=32;       // remove virgin flag
+   if (board[L]) {
+     RobotTransportFromTo(L,127,board); // clear target field
+     D_+=16;
+     if (D_==128)  D_=1;                // next drop area
+     else if (D_==129){ D_=7; F_=-1;}
+     else if (D_==134){ D_=8; F_=-1;}
+     else if (D_&0x88){ D_=0; F_= 1;}
+     tTT[127]=F_*-900+tTT[D_];          // new coord
+     tA1[127]=tA1[D_];
+     tA2[127]=tA2[D_];
+   }
+
+   RobotTransportFromTo(K, L, board);
+   board[L]=board[K];                   // move K -> L
+   board[K]=0;                          // start K=empty
+
+   if (EP) {                            // E.P. move done
+     RobotTransportFromTo(board[board[127]],127,board);   // remove E.P. pawn field
+     board[board[127]]=0;               // delete opponent pawn at E.P. sqr
+     EP=0;                              // delete E.P.
+   }
+   else
+   if (board[126]!=turn) {
+     board[126]=0;                      // delete markers for possible E.P.
+     board[127]=0;
+     board[128]=0;
+   }
+
+   if (RK) {
+     RobotTransportFromTo(board[board[124]], board[board[125]] ,board);
+     board[board[124]]=board[board[125]]&15;
+     board[board[125]]=0;
+     board[125]=0;                      // delete markers for castling=Rochade
+     board[124]=0;
+     RK=0;
+   }
+}
+
+
+
+long TTtarget;
+char TTrdy;
+//------------------------------------------------------------------------------
+task  RotateToTargetTT() {
+//------------------------------------------------------------------------------
+  char port=TT, pwr=-80;
+  long dabs, oldabs;
+  TTrdy=0;
+
+  while (!(inArea(MEnc(port),TTtarget,5))) {
+    dabs=abs(MEnc(port)-TTtarget);
+    if (dabs>=100) pwr=-80;
+    if (dabs <80) pwr=-dabs;
+    if (dabs<=40) pwr=-30;
+
+    if ((oldabs<=dabs)&&(dabs<80)) pwr-=20;
+    if ((inArea(MEnc(port),TTtarget,5))) { Off(port); Wait(10);}
+    else {
+     if (MEnc(port)<TTtarget) { OnFwd(port,-pwr);}
+     if (MEnc(port)>TTtarget) { OnFwd(port, pwr);}
+    }
+    Wait(3);
+    oldabs=dabs;
+  }
+  Off(port);
+  Wait(50);
+  TTrdy= true;
+}
+
+
+long A1target;
+char A1rdy;
+//------------------------------------------------------------------------------
+task  RotateToTargetA1() {
+//------------------------------------------------------------------------------
+  long dabs, oldabs;
+  char port=A1, pwr=-100;
+
+  A1rdy=0;
+  while (!(inArea(MEnc(port),A1target,5))) {
+    dabs=abs(MEnc(port)-A1target);
+    if (dabs>=100) pwr=-100;
+    if (dabs<100) pwr=-dabs;
+    if (dabs<=30) pwr=-40;
+
+    if ((oldabs<=dabs)&&(dabs<80)) pwr-=20;
+    if ((inArea(MEnc(port),A1target,5))) { Off(port); Wait(10);}
+    else {
+     if (MEnc(port)<A1target) { OnFwd(port,-pwr);}
+     if (MEnc(port)>A1target) { OnFwd(port, pwr);}
+    }
+    Wait(3);
+    oldabs=dabs;
+  }
+  Off(port);
+  Wait(50);
+  A1rdy= true;
+}
+
+
+long A2target;
+char A2rdy;
+//------------------------------------------------------------------------------
+task  RotateToTargetA2() {
+//------------------------------------------------------------------------------
+  long dabs, oldabs;
+  char port=A2, pwr=-100;
+
+  A2rdy=0;
+  while (!(inArea(MEnc(port),A2target,5))) {
+    dabs=abs(MEnc(port)-A2target);
+    if (dabs>=100) pwr=-100;
+    if (dabs<100) pwr=-dabs;
+    if (dabs<=40) pwr=-40;
+
+    if ((oldabs<=dabs)&&(dabs<80)) pwr-=20;
+    if ((inArea(MEnc(port),A2target,5))) { Off(port); Wait(10);}
+    else {
+     if (MEnc(port)<A2target) { OnFwd(port,-pwr);}
+     if (MEnc(port)>A2target) { OnFwd(port, pwr);}
+    }
+    Wait(3);
+    oldabs=dabs;
+  }
+  Off(port);
+  Wait(50);
+  A2rdy= true;
+}
+
+
+//------------------------------------------------------------------------------
+task ResetTT() {
+//------------------------------------------------------------------------------
+  char state, speed=70;
+  TTrdy=0;
+  OnFwd(TT,-speed);
+  Wait(3000);
+  while(!(state==2)) {
+    if (state==0) {
+      OnFwd(TT, speed);
+      if (STouch(TT)) {
+        Off(TT);
+        Wait(10);
+        state=1;
+      }
+    }
+    if (state==1) {
+      OnFwd(TT,-speed);
+      Wait(50);
+      if (!STouch(TT)) {
+        Off(TT);
+        Wait(10);
+        state=2;
+      }
+    }
+    Wait(1);
+  }
+  Wait(200);
+  if (state==2) ResetRotationCount(TT);
+  Wait(200); Coast(TT);
+  TTrdy=1;
+}
+
+
+//------------------------------------------------------------------------------
+task ResetA1() {
+//------------------------------------------------------------------------------
+  char state, speed=-100;
+  A1rdy=0;
+  while(!(state==2)) {
+    if (state==0) {
+      OnFwd(A1, speed);
+      if (STouch(A1)) {
+        Off(A1);
+        Wait(10);
+        state=1;
+      }
+    }
+    if (state==1) {
+      OnFwd(A1,70);
+      Wait(50);
+      if (!STouch(A1)) {
+        Off(A1);
+        Wait(10);
+        state=2;
+      }
+    }
+    Wait(1);
+  }
+  Wait(200);
+  if (state==2) ResetRotationCount(A1);
+  Wait(200); Coast(A1);
+  A1rdy=1;
+}
+
+
+//------------------------------------------------------------------------------
+task ResetA2() {
+//------------------------------------------------------------------------------
+  char state, speed=100;
+  A2rdy=0;
+  while(!(state==2)) {
+    if ((state==0)&&(MEnc(A1)<2500)) {
+      if (MEnc(A1)<2500) {OnFwd(A2, speed);}
+      if (STouch(A2)) {
+        Off(A2);
+        Wait(10);
+        state=1;
+      }
+    }
+    if (state==1) {
+      OnFwd(A2,-70);
+      Wait(50);
+      if (!STouch(A2)) {
+        Off(A2);
+        Wait(10);
+        state=2;
+      }
+    }
+    Wait(1);
+  }
+  Wait(200);
+  if (state==2) ResetRotationCount(A2);
+  Wait(200); Coast(A2);
+  A2rdy=1;
+}
+
+
+//------------------------------------------------------------------------------
+void InitLookupTable() {
+//------------------------------------------------------------------------------
+  int p;
+
+//      sqr            TT               sh.ri             el.le
+    p= 119;  tTT[p]= 1050;       tA1[p]=5210;     tA2[p]=-1880; // h1
+    p= 118;  tTT[p]=  760;       tA1[p]=4700;     tA2[p]=-2535; //
+    p= 117;  tTT[p]=  510;       tA1[p]=4690;     tA2[p]=-2600;
+    p= 116;  tTT[p]=  250;       tA1[p]=4700;     tA2[p]=-2600;
+    p= 115;  tTT[p]=  -30;       tA1[p]=4700;     tA2[p]=-2580;
+    p= 114;  tTT[p]= -234;       tA1[p]=4850;     tA2[p]=-2370;
+    p= 113;  tTT[p]= -500;       tA1[p]=5020;     tA2[p]=-2140;
+    p= 112;  tTT[p]= -740;       tA1[p]=5370;     tA2[p]=-1420; // a1
+
+    p= 103;  tTT[p]= 1080;       tA1[p]=4180;     tA2[p]=-3235; // h2
+    p= 102;  tTT[p]=  770;       tA1[p]=3945;     tA2[p]=-3485;
+    p= 101;  tTT[p]=  500;       tA1[p]=3930;     tA2[p]=-3535;
+    p= 100;  tTT[p]=  200;       tA1[p]=3895;     tA2[p]=-3570;
+    p=  99;  tTT[p]= -100;       tA1[p]=3920;     tA2[p]=-3640; // d2
+    p=  98;  tTT[p]= -340;       tA1[p]=3985;     tA2[p]=-3535;
+    p=  97;  tTT[p]= -610;       tA1[p]=4180;     tA2[p]=-3375;
+    p=  96;  tTT[p]= -830;       tA1[p]=4370;     tA2[p]=-3090; // a2
+
+    p=  87;  tTT[p]= 1160;       tA1[p]=3530;     tA2[p]=-3995; // h3
+    p=  86;  tTT[p]=  850;       tA1[p]=3395;     tA2[p]=-4135;
+    p=  85;  tTT[p]=  500;       tA1[p]=3200;     tA2[p]=-4220;
+    p=  84;  tTT[p]=  240;       tA1[p]=3220;     tA2[p]=-4230;
+    p=  83;  tTT[p]=  -80;       tA1[p]=3225;     tA2[p]=-4205;
+    p=  82;  tTT[p]= -380;       tA1[p]=3320;     tA2[p]=-4135;
+    p=  81;  tTT[p]= -690;       tA1[p]=3455;     tA2[p]=-4035;
+    p=  80;  tTT[p]=-1000;       tA1[p]=3630;     tA2[p]=-3830; // a3
+
+    p=  71;  tTT[p]= 1230;       tA1[p]=2905;     tA2[p]=-4455; // h4
+    p=  70;  tTT[p]=  930;       tA1[p]=2840;     tA2[p]=-4665;
+    p=  69;  tTT[p]=  570;       tA1[p]=2840;     tA2[p]=-4665;
+    p=  68;  tTT[p]=  330;       tA1[p]=2655;     tA2[p]=-4730;
+    p=  67;  tTT[p]= -130;       tA1[p]=2710;     tA2[p]=-4750; // d4
+    p=  66;  tTT[p]= -425;       tA1[p]=2825;     tA2[p]=-4610;
+    p=  65;  tTT[p]= -745;       tA1[p]=2870;     tA2[p]=-4525;
+    p=  64;  tTT[p]=-1060;       tA1[p]=3180;     tA2[p]=-4330; // a4
+
+    p=  55;  tTT[p]= 1415;       tA1[p]=2380;     tA2[p]=-4970; // h5
+    p=  54;  tTT[p]= 1000;       tA1[p]=2210;     tA2[p]=-5080;
+    p=  53;  tTT[p]=  605;       tA1[p]=2210;     tA2[p]=-5200;
+    p=  52;  tTT[p]=  240;       tA1[p]=2210;     tA2[p]=-5160;
+    p=  51;  tTT[p]= -150;       tA1[p]=2160;     tA2[p]=-5160;
+    p=  50;  tTT[p]= -490;       tA1[p]=2180;     tA2[p]=-5070;
+    p=  49;  tTT[p]= -860;       tA1[p]=2360;     tA2[p]=-4980;
+    p=  48;  tTT[p]=-1240;       tA1[p]=2530;     tA2[p]=-4760; // a5
+
+    p=  39;  tTT[p]= 1505;       tA1[p]=2055;     tA2[p]=-5290; // h6
+    p=  38;  tTT[p]= 1075;       tA1[p]=1785;     tA2[p]=-5355;
+    p=  37;  tTT[p]=  670;       tA1[p]=1610;     tA2[p]=-5410;
+    p=  36;  tTT[p]=  300;       tA1[p]=1515;     tA2[p]=-5440;
+    p=  35;  tTT[p]= -220;       tA1[p]=1610;     tA2[p]=-5460;
+    p=  34;  tTT[p]= -580;       tA1[p]=1730;     tA2[p]=-5450;
+    p=  33;  tTT[p]= -970;       tA1[p]=1910;     tA2[p]=-5340;
+    p=  32;  tTT[p]=-1300;       tA1[p]=2090;     tA2[p]=-5130; // a6
+
+    p=  23;  tTT[p]= 1700;       tA1[p]=1505;     tA2[p]=-5580; // h7
+    p=  22;  tTT[p]= 1230;       tA1[p]=1215;     tA2[p]=-5650;
+    p=  21;  tTT[p]=  800;       tA1[p]=1340;     tA2[p]=-5830;
+    p=  20;  tTT[p]=  330;       tA1[p]=1120;     tA2[p]=-5770;
+    p=  19;  tTT[p]= -180;       tA1[p]=1068;     tA2[p]=-5740;
+    p=  18;  tTT[p]= -660;       tA1[p]=1260;     tA2[p]=-5830;
+    p=  17;  tTT[p]=-1095;       tA1[p]=1420;     tA2[p]=-5600;
+    p=  16;  tTT[p]=-1480;       tA1[p]=1530;     tA2[p]=-5360; // a7
+
+    p=   7;  tTT[p]= 1975;       tA1[p]=1130;     tA2[p]=-5880; // h8
+    p=   6;  tTT[p]= 1480;       tA1[p]= 920;     tA2[p]=-6100;
+    p=   5;  tTT[p]=  945;       tA1[p]= 935;     tA2[p]=-6100;
+    p=   4;  tTT[p]=  380;       tA1[p]= 900;     tA2[p]=-6100;
+    p=   3;  tTT[p]= -155;       tA1[p]= 775;     tA2[p]=-5960;
+    p=   2;  tTT[p]= -810;       tA1[p]= 930;     tA2[p]=-5960;
+    p=   1;  tTT[p]=-1230;       tA1[p]= 980;     tA2[p]=-5890;
+    p=   0;  tTT[p]=-1685;       tA1[p]=1260;     tA2[p]=-5685; // a8
+
+    p= 128;  tTT[p]=    0;       tA1[p]=   0;     tA2[p]=minA2; // align board
+
+    p= 127; tTT[p]=-900+tTT[0];       tA1[p]=tA1[0];   tA2[p]=tA2[0]; // drop area
+
+}
+
+//------------------------------------------------------------------------------
+void MoveClawTo(int sqr) {
+//------------------------------------------------------------------------------
+  printf1(0, 56, "target sqr=%4d",sqr);
+
+  if (MEnc(A1)>=(tA1[sqr]-1000) && (MEnc(A2)>=tA2[sqr])-1000)  {
+
+    TTtarget=tTT[sqr];    start RotateToTargetTT;
+    if(MEnc(A1)>3000) { A1target=max(tA1[sqr],3000); start RotateToTargetA1; }
+    while (!A1rdy);
+    A1target=tA1[sqr];    start RotateToTargetA1;
+    A2target=tA2[sqr];    start RotateToTargetA2;
+  }
+
+  else  {
+    TTtarget=tTT[sqr];    start RotateToTargetTT;
+
+    A2target=min(MEnc(A2)+1000,0);    start RotateToTargetA2;
+    Wait(100);
+    while (!A2rdy);
+
+    A1target=tA1[sqr];      start RotateToTargetA1;
+    A2target=tA2[sqr];      start RotateToTargetA2;
+    Wait(100);
+  }
+
+  while (!TTrdy);
+  while (!A1rdy);
+  while (!A2rdy);
+
+  Off(OUT_ABC);
+  while(btn (BTNLEFT));
+  if(btn (BTNRIGHT)) {
+    while(btn (BTNRIGHT));
+    tTT[sqr]= MEnc(TT);     tA1[sqr]=MEnc(A1);     tA2[sqr]=MEnc(A2);
+    PlayTones(sndBlipBlip);
+  }
+  Wait(200);
+
+}
+
+//------------------------------------------------------------------------------
+inline void CheckSquare(int sqr) {
+//------------------------------------------------------------------------------
+
+    BT_HAND_up();      while (!BT1_Sensor3);        // hand up!
+
+    MoveClawTo(sqr);  PlayTones(sndChordUp);
+    Coast(OUT_ABC); Wait(200);
+
+    BT_HAND_dn(); while (!BT1_Sensor1);             // hand down!
+
+    while(!btnhit() );                    // wait until Btn pressed
+    if(btn (BTNRIGHT)) {
+      tTT[sqr]= MEnc(TT);     tA1[sqr]=MEnc(A1);     tA2[sqr]=MEnc(A2);
+      PlayTones(sndBlipBlip);
+    }
+    if(btn (BTNLEFT)) return;
+}
+
+//------------------------------------------------------------------------------
+void CalibrateAllSquares() {
+//------------------------------------------------------------------------------
+  int sqr;
+  BT_CLAW_open(); Wait(200);          // claw open!
+
+  for (sqr=119; sqr>=0; --sqr ) {
+    if (sqr & 0x88) continue;
+    CheckSquare(sqr);
+  }
+}
+
+//------------------------------------------------------------------------------
+void Calibrate_9_Squares(){
+//------------------------------------------------------------------------------
+  CheckSquare( 87);
+  CheckSquare( 86);
+  CheckSquare( 85);
+  
+  CheckSquare(100);
+  CheckSquare( 99);
+  CheckSquare( 98);
+  
+  CheckSquare( 84);
+  CheckSquare( 83);
+  CheckSquare( 82);
+  
+
+}
+
+//------------------------------------------------------------------------------
+void RobotTransportFromTo(int START, int TARGET, char board[]) {
+//------------------------------------------------------------------------------
+  char BigPiece=0;
+
+  BT_CLAW_open();   Wait(100);                              // claw open!
+  BT_HAND_up();     Wait(10);  while (!BT1_Sensor3);         // hand up!
+
+
+
+  MoveClawTo(START);  PlayTones(sndBuzz);  Coast(OUT_ABC);
+
+  if ( ((board[START]&7)==3)||((board[START]&7)==4)||((board[START]&7)==7) ) {
+    BigPiece=1;
+    BT_HAND_md();  Wait(10);  while (!BT1_Sensor2);          // hand med
+  }
+  else {
+    BT_HAND_dn();  Wait(10);  while (!BT1_Sensor1);          // hand down!
+  }
+  PlayTones(sndBeep);  Coast(OUT_ABC);  Wait(200);
+  
+  BT_CLAW_close(); Wait(100);                    // claw close! => grab piece
+  BT_HAND_up();    Wait(10);  while (!BT1_Sensor3);          // hand up!
+  
+  MoveClawTo(TARGET);  PlayTones(sndBuzz);  Coast(OUT_ABC);
+  
+  if ( BigPiece ) {
+    BT_HAND_md();  Wait(10);  while (!BT1_Sensor2);
+  }
+  else {
+    BT_HAND_dn();  Wait(10);  while (!BT1_Sensor1);
+  }
+
+  BT_CLAW_open();  Wait(100);                    // claw open! => drop piece
+  BT_HAND_up();    Wait(10);  while (!BT1_Sensor3);         // hand up!
+}
+
+
+
+//------------------------------------------------------------------------------
+void RobotArmsZeroInit() {
+//------------------------------------------------------------------------------
+   start ResetTT;
+   start ResetA1;
+   Wait(4000); start ResetA2;
+
+   while(!(TTrdy&&A1rdy&&A2rdy));
+}
+
+
+//------------------------------------------------------------------------------
+task DisplayValues() {
+//------------------------------------------------------------------------------
+  ClearScreen();
+  while(1) {
+
+    printf1(0,48,"S1%d",STouch(TT)); printf1(24,48, "TT%5d",MEnc(TT)); printf1(66,48,"run%2d",MotorRunState(TT));
+    printf1(0,40,"S2%d",STouch(A1)); printf1(24,40, "A1%5d",MEnc(A1)); printf1(66,40,"run%2d",MotorRunState(A1));
+    printf1(0,32,"S3%d",STouch(A2)); printf1(24,32, "A2%5d",MEnc(A2)); printf1(66,32,"run%2d",MotorRunState(A2));
+    
+    printf1(0,24, "BT1_S1 %d", BT1_Sensor1);
+    printf1(0,16, "BT1_S2 %d", BT1_Sensor2);
+    printf1(0, 8, "BT1_S3 %d", BT1_Sensor3);
+    printf1(0, 0, "MovRdy %d", BT1_AutoMvRdy);
+
+    Wait(10);
+  }
+}
+
+//------------------------------------------------------------------------------
+task EmergencyStop() {
+//------------------------------------------------------------------------------
+  while(true) {
+    while (STouch(S4)) {
+      for (int i=1; i<=_NOS_; ++i) {   // send twice each time
+        Yield(); while (BluetoothStatus(i) != NO_ERR);
+        RemoteStopProgram(i);
+        //Yield(); while (BluetoothStatus(i) != NO_ERR);
+        Wait(5);
+      }
+      StopAllTasks();
+    }
+    Wait(10);
+  }
+}
+
+
+
+
+/******************************************************************************/
+
+/******************************************************************************/
+task main(){
+/******************************************************************************/
+  char EP,                            // flag: en passant
+       RK,                            // flag: castling=Rochade
+       CK, CM,                        // flag: check!=Schach! (1&8, 1&16)
+       turn,                          // side on turn
+       chosen;                        // manual or auto move from stdin input;
+  char board[129];                    // Piece K_start-> L_dest
+  int K, L,                           // score local, remote
+      score, rscore1, rscore2, rscore3, idum, buf;
+  char PMOD=0, m1, m2, m3;
+  string s;
+
+
+// init all defauts
+  Init();
+  InitIOports();
+  InitLookupTable();
+
+  start EmergencyStop;
+  StartBTMuxNetwork(2);
+  start DisplayValues;
+
+// chess robot setup
+  BT_CLAW_open();  Wait(100);  BT_HAND_up();  while (!BT1_Sensor3);
+  RobotArmsZeroInit(); PlayTones(sndChordUp);
+
+  // align board
+  BT_CLAW_close(); Wait(1000);
+  MoveClawTo(128); PlayTones(sndChordUp); Coast(OUT_ABC); Wait(200);
+
+  // init chessboard alignment
+  BT_HAND_up();  while (!BT1_Sensor3);  BT_CLAW_open(); Wait(200);
+
+  stop DisplayValues;
+  buf=Menu("Calibrate ?", "/9  /ALL  /no");
+
+  start DisplayValues;
+  if(buf==BTNLEFT)   Calibrate_9_Squares();
+  else
+  if(buf==BTNCENTER) CalibrateAllSquares();
+  BT_HAND_up();  while (!BT1_Sensor3);
+
+  stop DisplayValues;
+  // finished: real chess board setup
+
+  // virtual chess board and Hal AI setup
+  EP=RK=CK=CM=0;
+  K=-1; L=-1;
+  turn= 8;                                   // 8=white
+  BoardSetup(board);
+
+  ClearScreen();
+  PrintBoard (K, L, turn, CK, CM, RK, board);
+
+  while(true){
+    chosen=false;                              // get choice auto/manually
+    //permanent auto mode: outcomment while loop!
+    //while (!(chosen=GetHIDinput(K, L, turn, EP, RK, CK, CM, board)));
+                                               // (pass move + flags)
+
+    if (L!=-1) {                               // L>=0: manual move chosen
+      start DisplayValues;
+      RobotMovePiece(K, L, turn, EP, RK, board);
+      stop DisplayValues;
+    }
+    else {                                        // L=-1: auto move required
+                                                  // parallelizing:
+      BTSendBoard(K, L, turn, EP, RK, CK, CM, board, 1);   // auto move (remote)
+      Wait(20);
+      BTAutoMove(1);
+      Wait(20);
+      
+      BTSendBoard(K, L, turn, EP, RK, CK, CM, board, 2);   // auto move (remote)
+      Wait(20);
+      BTAutoMove(2);
+      Wait(20);
+
+      score=AutoMove(K, L, turn, EP, RK, CK, CM, board, PMOD);    // auto move (local)
+
+      ClearScreen();
+      BT1_AutoMvScr=-INFINITY;
+      BT2_AutoMvScr=-INFINITY;
+
+      if(turn==8)s="white"; else s="black";
+      TextOut(0,56, s);    TextOut(36,56," 1   2   3 ");
+      
+    until ( (BT1_AutoMvRdy && BT2_AutoMvRdy) ){
+      printf1(0,48,"K%3d", K);
+      printf1(0,40,"L%3d", L);
+      printf1(0,32,"EP%2d",EP);
+      printf1(0,24,"RK%2d",RK);
+      printf1(0, 8,"rdy%d", 1);
+      printf1(0, 0,"%4d",score);
+
+      printf1(24,48,"%4d", BT1_AutoMv_K);
+      printf1(24,40,"%4d", BT1_AutoMv_L);
+      printf1(24,32,"%4d", BT1_AutoMv_EP);
+      printf1(24,24,"%4d", BT1_AutoMv_RK);
+      printf1(24, 8,"%4d", BT1_AutoMvRdy);
+      printf1(24, 0,"%4d", BT1_AutoMvScr);
+
+      printf1(48,48,"%4d", BT2_AutoMv_K);
+      printf1(48,40,"%4d", BT2_AutoMv_L);
+      printf1(48,32,"%4d", BT2_AutoMv_EP);
+      printf1(48,24,"%4d", BT2_AutoMv_RK);
+      printf1(48, 8,"%4d", BT2_AutoMvRdy);
+      printf1(48, 0,"%4d", BT2_AutoMvScr);
+
+      Wait(50);
+    }
+
+
+#ifdef debug
+      getchar();
+#endif
+      rscore1= BT1_AutoMvScr;
+      rscore2= BT2_AutoMvScr;
+      if(tWHITE) {
+        m1= ((rscore1>rscore2)?1:2);
+        m2= ((score > max(rscore1,rscore2))?4:3);
+
+        if ((m2==3)&&(m1=1))   {
+          K= BT1_AutoMv_K;
+          L= BT1_AutoMv_L;
+          EP=BT1_AutoMv_EP;   // <<<<<<<<<<<<<<<<<<<<<<<<<<
+          RK=BT1_AutoMv_RK;
+        }
+        else
+        if ((m2==3)&&(m1=2))   {
+          K= BT2_AutoMv_K;
+          L= BT2_AutoMv_L;
+          EP=BT2_AutoMv_EP;   // <<<<<<<<<<<<<<<<<<<<<<<<<<
+          RK=BT2_AutoMv_RK;
+        }
+      }
+      else
+      if(tBLACK) {
+        m1= ((rscore1<rscore2)?1:2);
+        m2= ((score < min(rscore1,rscore2))?4:3);
+
+        if ((m2==3)&&(m1=1))   {
+          K= BT1_AutoMv_K;
+          L= BT1_AutoMv_L;
+          EP=BT1_AutoMv_EP;   // <<<<<<<<<<<<<<<<<<<<<<<<<<
+          RK=BT1_AutoMv_RK;
+        }
+        else
+        if ((m2==3)&&(m1=2))   {
+          K= BT2_AutoMv_K;
+          L= BT2_AutoMv_L;
+          EP=BT2_AutoMv_EP;   // <<<<<<<<<<<<<<<<<<<<<<<<<<
+          RK=BT2_AutoMv_RK;
+        }
+      }
+      
+
+      start DisplayValues;
+      RobotMovePiece(K, L, turn, EP, RK, board);
+      stop DisplayValues;
+    }
+
+    ClearScreen();
+    if(CM) {
+      TextOut(24,40,"GAME OVER");
+      TextOut(18,24,"CHECK MATE/");
+      TextOut(12,16,"KING CAPTURED");
+      PlayTones(sndFuneral);
+      Wait(1000);
+      ClearScreen();
+      PrintBoard (K, L, turn, CK, CM, RK, board);
+      SetLongAbort(true);
+      while(true) {
+        MarkPos(-1, FindKing((24-turn),board), board); Wait(200);
+      }
+    }
+
+    PrintBoard (K, L, (24-turn), CK, CM, RK, board);
+
+    K=-1;
+    L=-1;
+    CursPos=120;
+    turn=24-(turn);          // toggle 8 -> 16 -> 8 ->...
+
+    Wait(1);
+  }
+}
