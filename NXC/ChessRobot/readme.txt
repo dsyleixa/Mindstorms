@@ -1,7 +1,10 @@
 video:
 https://www.youtube.com/watch?v=Cv-yzuebC7E
 
-code: https://github.com/dsyleixa/Mindstorm... (English description see below ! ) 
+code: https://github.com/dsyleixa/Mindstorm... 
+
+(English description see below ! ) 
+
 Schach-Programm, geschrieben in NXC für Lego Mindstorms NXT 
 Das Schachprogramm läuft auf einem der NXT's, 
 zusammen mit einem 2. über Bluetooth verbundenen NXT wird dabei ein Schachroboter gesteuert. 
