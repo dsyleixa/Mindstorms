@@ -1,0 +1,284 @@
+/***************************************************************************/
+// Feed-Forward Netz mit 4 Sensor-Eingaengen (Touch an S1, S2, S3)
+// und 7 Ausgabe-Neurons (Anzeige auf dem Display)
+// (c) H. W. 2008
+/***************************************************************************/
+
+#include "nxcio.h"
+#include "math.h"
+
+
+byte ni=4;
+int  nz=7;
+
+float Ni[nz][ni];
+float Nw[nz][ni];
+float Nnet[nz];
+float Nthr[nz];
+float Nout[nz];
+
+string MenuText;
+
+
+/***************************************************************************/
+// propagate -> net
+/***************************************************************************/
+
+void netPropag(int z){      // Propagierungsfunktion 1 für Neuron nz
+  int i=0;                    // kalkuliert den Gesamt-Input (net)
+  float s=0;
+
+  for(i=0;i<ni;i++){
+     s+= (Ni[z][i]*Nw[z][i]);     // gewichtete Summe
+  }
+  Nnet[z]=s;
+}
+
+void PropagateNeuron(int z){   // Propagierungsfunktion 2 für Neuron nz
+  int i=0;                          // kalkuliert den Gesamt-Input (net)
+  float s=0;                        // abzueglich Schwellwert
+
+  for(i=0;i<ni;i++){
+     s+= (Ni[z][i]*Nw[z][i]);     // gewichtete Summe
+  }
+  Nnet[z]=s-Nthr[z];
+}
+
+/***************************************************************************/
+// activate -> output
+/***************************************************************************/
+
+void ActivateNeuron(int z){         // Aktivierungsfunktion 1 T: x -> [0; +1]
+
+   if (Nnet[z]>=0)                  // 0-1-Schwellwertfunktion
+      {Nout[z]=1;}                  // Fkt.-Wert: 0 oder 1
+   else {Nout[nz]=0;}
+}
+
+
+/***************************************************************************/
+// Init  program
+/***************************************************************************/
+
+void Init() {
+  SetFont("Tiny_6.ric");
+  #download "Tiny_6.ric";
+}
+
+
+/***************************************************************************/
+// Reset, Init Net
+/***************************************************************************/
+
+void ResetNeuron(int z){    // alles auf Null
+   int i;
+
+   for (i=0; i<ni; i++) {
+     Ni[z][i]=0;       // Einzel-Input (Dendrit)
+     Ni[z][i]=0;       // Einzel-Wichtung (Dendrit)
+   }
+   Nnet[z]=0;          // totaler Input
+   Nthr[z]=0;          // Schwellenwert (threshold)
+   Nout[z]=0;          // errechneter Aktivierungswert=Output
+}
+
+
+
+void InitAllNeurons(){              // alle Netz-Neurons auf Null
+   int z;
+
+   for (z=0; z<nz; z++) {           // Neuron-Schicht 0
+        ResetNeuron(z);}
+}
+
+
+/***************************************************************************/
+// Inputs
+/***************************************************************************/
+
+
+void InitAllSensors() {
+    SetSensorTouch(0);
+    SetSensorTouch(1);
+    SetSensorTouch(2);
+    SetSensorTouch(3);
+}
+
+
+inline void RefreshInputLayer() {
+   int i, z;
+
+   for (z=0; z<nz; z++)
+     for (i=0; i<ni; i++)   {
+       Ni[z][i]=SensorValue(i);
+   }
+}
+
+
+/***************************************************************************/
+// ForwardPropagation
+/***************************************************************************/
+
+void ForwardPropagation() {
+  int z;
+  
+  for(z=0; z<nz; z++) {
+     RefreshInputLayer();
+     PropagateNeuron(z);
+     ActivateNeuron(z);
+  }
+}
+
+
+/***************************************************************************/
+// Display
+/***************************************************************************/
+
+task DisplayValues(){
+  int i;  // inputs = sensors
+  int z;  // neuron number = outputs
+  int ibuf;
+  float fbuf;
+
+  while(true) {
+
+    //FontTextOut(0,57,__gFTFontName,"i....w1.....w2.....w3.....w4.....th..out");
+    FontTextOut(0,57,__gFTFontName,"i..................................soll...out");
+
+    for(i=0; i<ni; i++) {
+       ibuf= Ni[0][i];
+       printf1g(0, 49-(8*i),"%1d",ibuf);
+    }
+
+
+    for(z=0; z<nz; z++) {
+    /*
+       for (i=0; i<ni; i++) {
+          fbuf=Nw[z][i];
+          printf1g(10+i*6*3 ,49-(8*z),"%2.1f", fbuf);
+       }
+       fbuf=Nthr[z];
+       printf1g(10+4*6*3 ,49-(8*z),"%2.1f", fbuf);
+       
+    */
+
+       ibuf=round(Nout[z]);
+       printf1g( 4+5*6*3 ,49-(8*z),"%1d"  , ibuf);
+    }
+  }
+}
+
+
+
+/***************************************************************************/
+
+
+void LearnPerceptronRule() { // Perceptron-Lern-Modus
+  int ErrorCount;
+  int in; // Sensor-Kombinationen
+  int i; // Anzahl Inputs
+  int j; // Anzahl Ausgabe-Neurons
+  int sollOut;
+  int key;
+
+
+ do
+ {
+
+
+  ErrorCount=0;
+  PlayTone(440,100);
+  MenuText="-- << ok >> ++";
+
+
+    ForwardPropagation();
+    Wait(1);
+
+    for (j=0;j<2;j++) // 1 bis Anzahl Ausgabe-Neuron
+    {
+
+      sollOut=Nout[j];
+      MenuText="-- << ok >> ++";
+      
+      printf1g( 4+5*6*3 ,49-(8*z),"%1d"  , sollOut);
+
+      do // erzeugten Output berichtigen
+      {
+        key=ReadKey();
+
+        if (key==BTNLEFT) { if (sollOut>0) sollOut=0; }
+        else
+        if (key==BTNRIGHT) { if (sollOut==0) sollOut=1; }
+
+
+        Wait(10);
+      } while ((key!=2)&&(key!=4));
+
+      println(5, " ");
+
+      //...................................................
+
+      //....................................................
+
+                                        // Lern-Modus START
+      //....................................................
+      if (sollOut==Neuron0[j].out ) // teachOut korrekt
+      {
+            PlaySound(soundBlip);
+            PlaySound(soundBlip);
+            wait1Msec(100);
+      }
+         //....................................................
+      if (sollOut!=Neuron0[j].out) // teachOut falsch
+      {
+             PlaySound(soundException);
+             wait1Msec(100);
+        ErrorCount+=1;
+             //...................................................
+                                        // LERNEN
+
+        for (i=0; i<=L0; i++) // fuer alle i (Inputs)
+        { // Wichtungen anpassen (Delta-Regel)
+
+                 Neuron0[j].w[i] = Neuron0[j].w[i]+ (lf *Neuron0[j].in[i]*(sollOut-Neuron0[j].out));
+        }
+
+        if (sollOut!=Neuron0[j].out) // Schwelle anpassen (Delta-Regel, erweitert)
+        {
+                 Neuron0[j].th = Neuron0[j].th + (lf *(sollOut-Neuron0[j].out));
+        }
+        //...................................................
+      } // if (sollOut!=Neuron0[j].out)
+
+   } // for j
+
+
+ } while (ErrorCount>0);
+
+
+}
+
+
+
+
+/***************************************************************************/
+
+
+task main() {
+   Init();
+   InitAllNeurons();
+   InitAllSensors();
+
+   start DisplayValues;
+
+   while(true) {
+
+      ForwardPropagation();
+
+
+
+   }
+
+}
+
+

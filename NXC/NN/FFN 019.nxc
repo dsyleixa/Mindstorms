@@ -1,0 +1,594 @@
+/***************************************************************************/
+// Feed-Forward Net
+// (outputs shown on display)
+// (c) H. W. 2008-2010, FP (at) Sirius Cybernetics Corporation
+// NXC version (Bricxcc 3.3.8.10) - Soundfiles ok?
+/***************************************************************************/
+
+// Autor: Helmut Wunder
+// frei verwendbar für private Zwecke
+// (für kommerzielle Zwecke nur nach bes. Gen.)
+
+/***************************************************************************/
+// Neuron Net Internals
+/***************************************************************************/
+
+const string IRobot="Hal 2010";
+const string version="019";
+const int ni=3;      // number of inputs (max. displayed: 24)
+const int nz=6;      // number of neurons = outputs (max. displayed: 24)
+
+/***************************************************************************/
+// excerpts from:
+// #include "nxcio.h"
+// #include "math.h"
+/***************************************************************************/
+
+/***************************************************************************/
+// graphic display output
+/***************************************************************************/
+
+string __gFTFontName;
+inline void SetFont(string name) { __gFTFontName = name; }
+
+#define printf1g( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  FontTextOut(_x, _y, __gFTFontName, sval1); \
+}
+
+#define printfsg( _x, _y, _s) { FontTextOut(_x, _y, __gFTFontName, _s);}
+
+/***************************************************************************/
+// Button handling
+/***************************************************************************/
+
+#define getbtn() getchar();
+
+inline bool btnhit(){
+   char test;
+   test=( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+       || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+   return test;
+}
+
+
+
+/***************************************************************************/
+// Sound: PlayMelody
+/***************************************************************************/
+
+
+
+void PlayMelody(int melody[])
+{
+  for (int i = 0; i < ArrayLen(melody)-1; ++i) {
+
+    PlayTone(melody[i], melody[i+1]);
+    Wait(melody[i++]);
+
+  }
+}
+
+
+
+
+//*****************************************
+
+int sndChordUp[] = {TONE_C4, 50, TONE_E4, 50, TONE_G4, 50,
+       TONE_C5, 50, TONE_E5, 50, TONE_G5, 50, TONE_C6, 200};
+
+int sndChordDn[] = {TONE_C6, 50, TONE_G5, 50, TONE_E5, 50,
+       TONE_C5, 50, TONE_G4, 50, TONE_E4, 50,  TONE_C4, 200};
+
+int sndBeep[] = {TONE_C5, 200};
+
+int sndBeepBeep[] = {TONE_C5, 200 , 0, 100, TONE_C5, 200};
+
+int sndBlip[] = {TONE_C7, 50 };
+
+int sndBlipBlip[] = {TONE_C7, 50, 0, 10, TONE_C7, 50 };
+
+int sndBuzz[] = {220, 200 };
+
+int sndError[] = {TONE_C4, 50, 0, 50, TONE_C4, 50, 0, 50, TONE_C4, 50, 0, 50} ;
+
+//*****************************************
+
+
+
+
+/***************************************************************************/
+// math functions
+/***************************************************************************/
+
+inline int round(float f)
+{
+  if (f>=0) {return (f + 0.5);}
+  else
+  {return (f - 0.5);}
+}
+
+/***************************************************************************/
+// Init  program
+/***************************************************************************/
+
+void InitHalBios() {
+  SetFont("Tiny_6.ric");
+  #download "Tiny_6.ric";
+  SetLongAbort(true);
+}
+
+/***************************************************************************/
+// Neuron Structure
+/***************************************************************************/
+
+float Ni[nz][ni];   // inputs
+float Nw[nz][ni];   // weights
+float Nnet[nz];     // netto input (weighted sum)
+float Nthr[nz];     // threshold
+float Nout[nz];     // output
+
+
+/***************************************************************************/
+// File I/O
+/***************************************************************************/
+
+const string sFileName = "hal_mem.dat";
+
+void MindUpload() {
+
+  unsigned int nFileSize = 4*((ni+3)*(nz+1)); // estimated file zize
+  byte fHandle, i, j;
+  int IOresult, counter=0;
+  float fbuf;
+
+  TextOut(0,56-8, IRobot+"-"+version);
+  DeleteFile(sFileName);
+  IOresult = CreateFile(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    ClearScreen();
+
+    for (j=0;j<nz;j++) {
+      for (i=0; i<ni;i++)   {
+        counter+=1;
+        fbuf= Nw[j][i];
+
+        ClearScreen();
+        TextOut(0,56-8, IRobot+"-"+version);
+        NumOut ( 0,24, counter);
+        NumOut ( 0,16, fbuf);
+
+        WriteLn (fHandle, fbuf);
+        }
+
+      fbuf= Nthr[j];
+      counter+=1;
+      TextOut(0,56-8, IRobot+"-"+version);
+      NumOut ( 0,24, counter);
+      NumOut ( 0,16, fbuf);
+
+      WriteLn (fHandle, fbuf); }
+
+    CloseFile(fHandle);
+    PlayMelody(sndChordUp);
+  }
+  else
+  PlayMelody(sndError);
+  Wait(1000);
+}
+
+//*****************************************
+
+void TotalRecall() {
+
+  unsigned int nFileSize;
+  byte fHandle, i, j;
+  int IOresult, counter=0;;
+  float fbuf;
+
+  ClearScreen();
+  TextOut(0,56-8, IRobot+"-"+version);
+  IOresult = OpenFileRead(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    for (j=0;j<nz;j++) {
+      for (i=0; i<ni;i++)   {
+
+        counter+=1;
+        ReadLn (fHandle, fbuf);
+        Nw[j][i]=fbuf;
+
+        ClearScreen();
+        TextOut(0,56-8, IRobot+"-"+version);
+        NumOut ( 0,24, counter);
+        NumOut ( 0,16, fbuf);
+        }
+
+      counter+=1;
+      ReadLn (fHandle, fbuf);
+      Nw[j][i]=fbuf;
+
+      ClearScreen();
+      TextOut(0,56-8, IRobot+"-"+version);
+      NumOut ( 0,24, counter);
+      NumOut ( 0,16, fbuf);
+    }
+
+    CloseFile(fHandle);
+    PlayMelody(sndChordUp);
+  }
+  else
+  PlayMelody(sndError);
+  Wait(1000);
+}
+
+
+/***************************************************************************/
+// propagate -> netto input (net)
+/***************************************************************************/
+
+
+inline void PropagateNeuron(int z){   // Propagierungsfunktion für Neuron nz
+  int i=0;                          // kalkuliert den Gesamt-Input (net)
+  float s=0;                        // abzueglich Schwellwert
+
+  for(i=0;i<ni;i++){
+     s+= (Ni[z][i]*Nw[z][i]);     // gewichtete Summe
+  }
+  Nnet[z]=s-Nthr[z];
+}
+
+
+/***************************************************************************/
+// activate -> output
+/***************************************************************************/
+
+
+inline void ActivateNeuron(int z){         // Aktivierungsfunktion 1 T: x -> [0; +1]
+
+   if (Nnet[z]>0)                   // 0-1-Schwellwertfunktion
+      {Nout[z]=1;}                  // Fkt.-Wert: 0 oder 1
+   else {Nout[z]=0;}
+}
+
+
+/***************************************************************************/
+// Net: Init, Set
+/***************************************************************************/
+
+inline void ResetNeuron(int z){
+
+   int i;
+
+   for (i=0; i<ni; i++) {
+     Ni[z][i]=0;       // Inputs  (Dendrit)
+     Nw[z][i]=0.0;     // Weights (Dendrit)
+   }
+   Nnet[z]=0.0;        // total netto Input (weighted sum)
+   Nthr[z]=0.4;        // threshold
+   Nout[z]=0;          // activation level = output
+}
+
+
+//*****************************************
+
+inline void ReloadMatrix(){
+   int z;
+
+   for (z=0; z<nz; z++) {
+        ResetNeuron(z);}
+}
+
+
+/***************************************************************************/
+// Inputs: set and watch
+/***************************************************************************/
+
+
+void InitAllSenses() {
+    SetSensorTouch(0);
+    SetSensorTouch(1);
+    SetSensorTouch(2);
+    SetSensorLowspeed(3);
+}
+
+//*****************************************
+
+inline void RefreshAllSenses() {  // get sensor inputs + store to neurons
+   int i, z, US1;
+
+   US1=SensorUS(3);
+   for (z=0; z< nz; z++) {
+       Ni[z][0]=SensorValue(0);
+       Ni[z][1]=SensorValue(1);
+       Ni[z][2]=SensorValue(2);
+/*
+       Ni[z][3]=(US1>30)&&(US1<100);   // (0,0): >= 100; (0,1): < 30;
+       Ni[z][4]=(US1<40);              // (1,0): 40-100; (1,1): 30-40;
+*/
+   }
+}
+
+
+/***************************************************************************/
+// Forward Propagation
+/***************************************************************************/
+
+inline void MatrixPropagation() {
+  int z;
+
+  for(z=0; z<nz; z++) {
+     PropagateNeuron(z);
+     ActivateNeuron(z);
+  }
+}
+
+
+/***************************************************************************/
+// Display
+/***************************************************************************/
+
+string MenuText; // bottom line menu text
+
+inline void displayInput(int _i, int _val){  // all inputs to all neurons
+  byte x, y, im;
+
+  im= _i %6;
+  x= (_i /6)*6;
+  y= (48-(8*im));
+
+  printf1g( x, y,"%1d ",_val);
+}
+
+//*****************************************
+
+
+inline void displayOutput(int _i, float _val){   // all outputs
+  byte x, y, im, offset;
+
+  if (nz<=6) offset=81;
+  else offset=30;
+
+  im= _i %6;
+  x= offset + (_i /6)*6*3;
+  y= (48-(8*im));
+
+  printf1g( x, y,"%1.0f ",_val);
+}
+
+//*****************************************
+
+
+inline void displayTOut(int _i, int _val){     //  target outputs
+  byte x, y, im, offset;
+
+  if (nz<=6) offset=86;
+  else offset=35;
+
+  im= _i %6;
+  x= offset + (_i /6)*6*3;
+  y= (48-(8*im));
+
+  printf1g( x, y,">%1d ",_val);
+}
+
+//*****************************************
+
+
+task DisplayValues(){
+  int i;  // inputs = sensors
+  int z;  // neuron number = outputs
+  int ibuf;
+  float fbuf;
+  string TopLine;
+
+  while(true) {
+
+    if((ni<=3)&&(nz<=6)) {
+      TopLine= "in..w1....w2....w3...thr..out.To";
+
+      for(i=0; i<ni; i++) {
+         ibuf= Ni[0][i];                     // neuron inputs
+         displayInput(i, ibuf);              // all inputs to all neurons
+      }
+
+      for(z=0; z<nz; z++) {
+
+        for (i=0; i<ni; i++) {
+           fbuf=Nw[z][i];
+           printf1g( 9+i*6*3 ,48-(8*z),"%2.1f", fbuf);   // neuron weights
+        }
+
+        fbuf=Nthr[z];
+        printf1g( 9+3*6*3 ,48-(8*z),"%2.1f", fbuf);      // neuron threshold
+
+        fbuf=(Nout[z]);
+
+        displayOutput(z, fbuf);
+      }
+    }
+    else
+
+    if((ni<=24)&&(nz<=24)) {
+      TopLine= "in............o..T..o..T..o..T..o..T";
+      for(i=0; i<ni; i++) {
+         ibuf= Ni[0][i];                           // neuron inputs
+         displayInput(i, ibuf);
+      }
+      for(z=0; z<nz; z++) {
+         fbuf=Nout[z];
+         displayOutput(z, fbuf);
+      }
+    }
+    printfsg(0,56, TopLine);
+    printfsg(0, 0, MenuText);
+  }
+}
+
+
+/***************************************************************************/
+// Teach and Learn
+/***************************************************************************/
+
+void LearnMatrixEvolution() { // Perceptron-Lern-Modus
+  int ErrorCount;             // new: featuring the Evolution Auto-Teach Agent
+
+  int   i; // Anzahl Inputs
+  int   j; // Anzahl Ausgabe-Neurons
+  float targOut;
+  int   ibuf;
+  float fbuf;
+  float tOutCribSheet[nz];  // crib sheet for the auto teach agent
+  bool  autoTeach=false;
+  char key;
+
+  float lf=0.3, lfthr;  // learning factor
+  lfthr=0.1;          // smaller learning factor for thrshold learning
+
+  PlayMelody(sndChordUp);
+
+  do
+  {
+    ErrorCount=0;
+
+    MenuText="-- <<          OK / esc        >> ++"; // Btn left, center/esc, right
+
+    for (j=0; j<nz; j++)    //   up to number of output Neurons
+    {
+      PropagateNeuron(j); ActivateNeuron(j); //  calculate current neuron output
+      ClearScreen();
+
+      if (!autoTeach) targOut=Nout[j] ;     //  target output == net output ?
+      else
+      if (autoTeach) targOut=tOutCribSheet[j] ;   // auto mode: recall former target values
+
+      if (!autoTeach)
+      MenuText="-- <<          OK / esc        >> ++"; // Btn left, center/esc, right
+
+      ibuf=targOut;
+      displayTOut(j, ibuf);
+
+      if (!autoTeach) do                   //  manual target Output correction
+      {
+          key=-1;
+          if (btnhit()) {PlayMelody(sndBlip); key=getbtn();}
+
+          if (key==BTNLEFT)  { targOut=0; }
+          else
+          if (key==BTNRIGHT) { targOut=1; }
+
+          ibuf=targOut;
+          displayTOut(j, ibuf);
+
+          Wait(1);
+
+          if (autoTeach) break;
+
+      }   while ((key!=BTNCENTER)&&(key!=BTNEXIT));
+
+      if (!autoTeach) tOutCribSheet[j]=targOut;  // store target output to crib sheet;
+
+      //...................................................
+
+      if (key==BTNEXIT) {               // EXIT Learn program
+          PlayMelody(sndBuzz);
+          return;
+      }
+      //....................................................
+                                        // LEARN-Mode START
+      //....................................................
+
+      if (targOut==Nout[j] )            // Out=teachOut (correct) => do nothing
+      {
+          if (!autoTeach) PlayMelody(sndBlipBlip);
+          Wait(1);
+      }
+      //....................................................
+
+      if (targOut!=Nout[j])             // Out!=teachOut (wrong)  => start learning
+      {
+         if (!autoTeach) PlayMelody(sndBeep);
+         Wait(1);
+         ErrorCount+=1;
+                                               // LEARNING:  Delta-Rule
+          for (i=0; i<ni; i++)                 // for all i (Inputs)
+          {                                    // adjust all weights
+             if ( targOut!=Nout[j]) {
+               Nw[j][i] = Nw[j][i]+ (lf *(targOut-Nout[j]) *Ni[j][i]);
+             }
+          }
+
+          PropagateNeuron(j); ActivateNeuron(j); //  again calculate neuron output
+
+          if (targOut!=Nout[j]) // adjust threshold (Delta-Rule, expanded)
+          {
+              Nthr[j] = Nthr[j] - (lfthr*(targOut-Nout[j]));
+          }
+
+      } // if (targOut!=Neuron[j].out)
+      //...................................................
+      PlayMelody(sndBlip);
+
+    } // for j
+
+    ClearScreen();
+    MenuText="manual         esc     automatic"; //
+
+    if ((!autoTeach) && (ErrorCount>0)) do   //  manual or automatic target Output correction?
+    {
+          key=-1;
+          if (btnhit()) {PlayMelody(sndBlip); key=getbtn();}
+
+          if (key==BTNLEFT)  { autoTeach=false; } // manual Teach Mode
+          else
+          if (key==BTNRIGHT) { autoTeach=true; }  // switch to Auto Teach Mode
+          Wait(1);
+
+     }    while ((key==-1));
+
+    if (key==BTNEXIT) {               // EXIT Learn program
+       key=-1;
+       PlayMelody(sndBuzz);
+       return;
+    }
+    key=-1;
+
+  } while (ErrorCount>0);
+
+  Wait(10);
+  PlayMelody(sndBeep);
+}
+
+
+/***************************************************************************/
+// task main
+/***************************************************************************/
+
+task main() {
+
+   char key;
+
+   ClearScreen();
+   TextOut(0,56-8, IRobot+"-"+version);
+
+   InitHalBios();
+   InitAllSenses();
+   ReloadMatrix();
+   Wait(500);
+   ClearScreen();
+   start DisplayValues;
+
+   while(true) {
+      MenuText="< save    Learn / clear   load >";
+      RefreshAllSenses();
+      MatrixPropagation();
+      key=-1;
+      if (btnhit()) key=getbtn();
+
+      if (key==BTNCENTER) {LearnMatrixEvolution(); ClearScreen();}
+      if (key==BTNLEFT  ) {stop DisplayValues; MindUpload();   ClearScreen(); start DisplayValues;}
+      if (key==BTNRIGHT ) {stop DisplayValues; TotalRecall(); ClearScreen(); start DisplayValues;}
+      if (key==BTNEXIT )  {ReloadMatrix(); ClearScreen(); PlayMelody(sndChordDn);}
+
+      Wait(1);
+   }
+}

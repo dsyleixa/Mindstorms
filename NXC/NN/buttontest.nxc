@@ -1,0 +1,43 @@
+char key;
+string s;
+
+inline int _getchar() {
+  int result =NO_OF_BTNS;
+
+    if (ButtonPressed(BTN1, false))
+      result = BTN1;
+    else if (ButtonPressed(BTN2, false))
+      result = BTN2;
+    else if (ButtonPressed(BTN3, false))
+      result = BTN3;
+    else if (ButtonPressed(BTN4, false))
+      result = BTN4;
+
+    if (result <> NO_OF_BTNS)  while(ButtonPressed(result, false));
+
+    return result;
+}
+
+
+bool keypressed(){
+   char test;
+   test=( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false) || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+   return test;
+}
+
+
+task main() {
+   SetLongAbort(true);
+
+   while(true) {
+       if ( keypressed() )
+       {
+          key=_getchar();
+          NumOut(0,56, key);
+          Wait(100);
+       }
+       TextOut(0,56, "   ");
+   }
+
+}
+

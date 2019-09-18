@@ -1,0 +1,166 @@
+/***************************************************************************/
+// Feed-Forward Netz mit 4 Sensor-Eingaengen (Touch an S1, S2, S3)
+// und 7 Ausgabe-Neurons (Anzeige auf dem Display)
+// (c) H. W. 2008
+/***************************************************************************/
+
+#include "nxtio.h"
+#download "Tiny_6.ric"
+
+byte ni=4;
+int  nz=7;
+
+float Ni[nz][ni];
+float Nw[nz][ni];
+float Nnet[nz];
+float Nthr[nz];
+int Nout[nz];
+
+
+
+
+/***************************************************************************/
+// propagate -> net
+
+void netPropag(int z){      // Propagierungsfunktion 1 für Neuron nz
+  int i=0;                    // kalkuliert den Gesamt-Input (net)
+  float s=0;
+
+  for(i=0;i<ni;i++){
+     s+= (Ni[z][i]*Nw[z][i]);     // gewichtete Summe
+  }
+  Nnet[z]=s;
+}
+
+void netPropagThr(int z){   // Propagierungsfunktion 2 für Neuron nz
+  int i=0;                          // kalkuliert den Gesamt-Input (net)
+  float s=0;                        // abzueglich Schwellwert
+
+  for(i=0;i<ni;i++){
+     s+= (Ni[z][i]*Nw[z][i]);     // gewichtete Summe
+  }
+  Nnet[z]=s-Nthr[z];
+}
+
+/***************************************************************************/
+// activate -> output
+
+void ActivateNeuron(int z){         // Aktivierungsfunktion 1 T: x -> [0; +1]
+
+   if (Nnet[z]>=0)                  // 0-1-Schwellwertfunktion
+      {Nout[z]=1;}                  // Fkt.-Wert: 0 oder 1
+   else {Nout[nz]=0;}
+}
+
+/***************************************************************************/
+//Reset
+
+void ResetNeuron(int z){    // alles auf Null
+   int i;
+
+   for (i=0; i<ni; i++) {
+     Ni[z][i]=0;       // Einzel-Input (Dendrit)
+     Ni[z][i]=0;       // Einzel-Wichtung (Dendrit)
+   }
+   Nnet[z]=0;          // totaler Input
+   Nthr[z]=0;          // Schwellenwert (threshold)
+   Nout[z]=0;          // errechneter Aktivierungswert=Output
+}
+
+
+void InitAllNeurons(){              // alle Netz-Neurons auf Null
+   int z;
+
+   for (z=0; z<nz; z++) {           // Neuron-Schicht 0
+        ResetNeuron(z);}
+}
+
+
+//**********************************************************************
+// Inputs
+
+void InitAllSensors() {
+    SetSensor(0, SENSOR_TOUCH);
+    SetSensor(1, SENSOR_TOUCH);
+    SetSensor(2, SENSOR_TOUCH);
+    SetSensor(3, SENSOR_TOUCH);
+}
+
+inline void RefreshInputLayer(int z) {
+   int i;
+   for (i=0; i<ni; i++)   {
+       Ni[z][i]=SensorValue(i);
+   }
+}
+
+/***************************************************************************/
+void ForwardPropagation() {
+  int z;
+  
+  for(z=0; z<nz; z++) {
+     RefreshInputLayer(z);
+     PropagateNeuron(z);
+     ActivateNeuron(z);
+  }
+}
+
+
+/***************************************************************************/
+task DisplayValues(){
+  int i;  // inputs = sensors
+  int j;  // neuron number = outputs
+   while(true) {
+
+    printXY( 0, 63, "IN:");
+                             printXY(48, 55, "|");
+                             printXY(48, 47, "|");
+    printXY( 0, 39, "th=");  printXY(48, 39, "|");
+    printXY( 0, 31, "OUT");  printXY(48, 31, "|");
+
+
+
+
+     for (j=0;j<nl0;j++) {
+         printXY(15, 63, "%2.0f", Neuron0[j].in[0]);
+         printXY(26, 63, "%2.0f", Neuron0[j].in[1]);
+         printXY(37, 63, "%2.0f", Neuron0[j].in[2]);
+
+         printXY(00+(j*53), 55, "%3.1f", Neuron0[j].w[0]);
+         printXY(12+(j*53), 47, "%3.1f", Neuron0[j].w[1]);
+         printXY(24+(j*53), 55, "%3.1f", Neuron0[j].w[2]);
+
+         printXY(25+(j*45), 39, "%3.1f", Neuron0[j].th);
+
+         printXY(25+(j*45), 31, "%2.0f", Neuron0[j].out);
+    }
+
+    // Menue-Zeilen fuer Tastatur-Steuerung
+
+    println(7, "%s", MenuText);
+
+
+  }
+  return;
+}
+
+
+
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+
+
+task main() {
+
+   InitAllNeurons();
+   InitAllSensors();
+
+}
+
+

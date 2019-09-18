@@ -1,0 +1,573 @@
+/***************************************************************************/
+// Feed-Forward Net
+// (outputs shown on display)
+// (c) H. W. 2008-2010, FP (at) Sirius Cybernetics Corporation
+// NXC version
+/***************************************************************************/
+
+/***************************************************************************/
+// Neuron Net Internals
+/***************************************************************************/
+
+const string IRobot="Hal 2010";
+const string version="014";
+const byte ni=3;          // number of inputs
+const int  nz=4;          // number of neurons = outputs
+
+
+/***************************************************************************/
+// excerpts from:
+// #include "nxcio.h"
+// #include "math.h"
+/***************************************************************************/
+
+/***************************************************************************/
+// graphic display output
+/***************************************************************************/
+
+string __gFTFontName;
+inline void SetFont(string name) { __gFTFontName = name; }
+
+#define printf1g( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  FontTextOut(_x, _y, __gFTFontName, sval1); \
+}
+
+#define printfsg( _x, _y, _s) { FontTextOut(_x, _y, __gFTFontName, _s);}
+
+
+/***************************************************************************/
+// Button handling
+/***************************************************************************/
+
+inline bool keypressed(){
+   char test;
+   test=( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+       || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+   return test;
+}
+
+
+inline int readkey() {
+  int result = -1;
+
+    if (ButtonPressed(BTN1, false))
+      result = BTN1;
+    else if (ButtonPressed(BTN2, false))
+      result = BTN2;
+    else if (ButtonPressed(BTN3, false))
+      result = BTN3;
+    else if (ButtonPressed(BTN4, false))
+      result = BTN4;
+
+    if (result <> -1)  while(ButtonPressed(result, false));
+
+    return result;
+}
+
+
+inline int _getchar() {
+  int result = -1;
+  while (true) {
+    if (ButtonPressed(BTN1, false))
+      result = BTN1;
+    else if (ButtonPressed(BTN2, false))
+      result = BTN2;
+    else if (ButtonPressed(BTN3, false))
+      result = BTN3;
+    else if (ButtonPressed(BTN4, false))
+      result = BTN4;
+    if (result <> -1)
+      break;
+    else
+      Yield();
+  }
+  while(ButtonPressed(result, false));
+  return result;
+}
+
+/***************************************************************************/
+// Sound: PlayTones
+/***************************************************************************/
+
+struct Note
+{
+  unsigned int Frequency;
+  unsigned int Duration;
+};
+
+Note ChordUp[] = {TONE_C4, 50, TONE_E4, 50, TONE_G4, 50,
+  TONE_C5, 50, TONE_E5, 50, TONE_G5, 50, TONE_C6, 200};
+
+Note ChordDn[] = {TONE_C6, 50, TONE_G5, 50, TONE_E5, 50,
+  TONE_C5, 50, TONE_G4, 50, TONE_E4, 50,  TONE_C4, 200};
+  
+Note Beep[] = {TONE_C5, 200};
+
+Note BeepBeep[] = {TONE_C5, 200 , 0, 100, TONE_C5, 200};
+
+Note Blip[] = {TONE_C7, 50 };
+
+Note BlipBlip[] = {TONE_C7, 50, 0, 10, TONE_C7, 50 };
+
+Note Buzz[] = {220, 200 };
+
+Note sdError[] = {TONE_C4, 50, 0, 50, TONE_C4, 50, 0, 50, TONE_C4, 50, 0, 50} ;
+
+
+void PlayTones(Note data[])
+{
+  for (int i = 0; i < ArrayLen(data); i++) {
+    Note tmp = data[i];
+    PlayTone(tmp.Frequency, tmp.Duration);
+    Wait(tmp.Duration);
+  }
+}
+
+/***************************************************************************/
+// math functions
+/***************************************************************************/
+
+inline int round(float f)
+{
+  if (f>=0) {return (f + 0.5);}
+  else
+  {return (f - 0.5);}
+}
+
+
+/***************************************************************************/
+// Init  program
+/***************************************************************************/
+
+void Init() {
+  SetFont("Tiny_6.ric");
+  #download "Tiny_6.ric";
+  SetLongAbort(true);
+}
+
+/***************************************************************************/
+// Neuron Structure
+/***************************************************************************/
+
+float Ni[nz][ni];   // inputs
+float Nw[nz][ni];   // weights
+float Nnet[nz];     // netto input (weighted sum)
+float Nthr[nz];     // threshold
+float Nout[nz];     // output
+
+
+/***************************************************************************/
+// File I/O
+/***************************************************************************/
+
+
+const string sFileName = "hal_mem.dat";
+
+void SaveMemory() {
+
+  unsigned int nFileSize = 4*((ni+3)*(nz+1)); // estimated file zize
+  byte fHandle, i, j;
+  int IOresult, counter=0;
+  float sillybuf;
+
+  TextOut(0,56-8, IRobot+"-"+version);
+  DeleteFile(sFileName);
+  IOresult = CreateFile(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    ClearScreen();
+
+    for (j=0;j<nz;j++) {
+      for (i=0; i<ni;i++)   {
+        counter+=1;
+        sillybuf= Nw[j][i];
+
+        ClearScreen();
+        TextOut(0,56-8, IRobot+"-"+version);
+        NumOut ( 0,24, counter);
+        NumOut ( 0,16, sillybuf);
+        
+        WriteLn (fHandle, sillybuf);
+        }
+
+      sillybuf= Nthr[j];
+      counter+=1;
+      TextOut(0,56-8, IRobot+"-"+version);
+      NumOut ( 0,24, counter);
+      NumOut ( 0,16, sillybuf);
+      
+      WriteLn (fHandle, sillybuf); }
+
+    CloseFile(fHandle);
+    PlayTones(ChordUp);
+  }
+  else
+  PlayTones(sdError);
+  Wait(1000);
+}
+
+
+//*****************************************
+
+void RecallMemory() {
+
+  unsigned int nFileSize;
+  byte fHandle, i, j;
+  int IOresult, counter=0;;
+  float sillybuf;
+  
+  ClearScreen();
+  TextOut(0,56-8, IRobot+"-"+version);
+  IOresult = OpenFileRead(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    for (j=0;j<nz;j++) {
+      for (i=0; i<ni;i++)   {
+
+        counter+=1;
+        ReadLn (fHandle, sillybuf);
+        Nw[j][i]=sillybuf;
+        
+        ClearScreen();
+        TextOut(0,56-8, IRobot+"-"+version);
+        NumOut ( 0,24, counter);
+        NumOut ( 0,16, sillybuf);
+        }
+
+      counter+=1;
+      ReadLn (fHandle, sillybuf);
+      Nw[j][i]=sillybuf;
+      
+      ClearScreen();
+      TextOut(0,56-8, IRobot+"-"+version);
+      NumOut ( 0,24, counter);
+      NumOut ( 0,16, sillybuf);
+    }
+
+    CloseFile(fHandle);
+    PlayTones(ChordUp);
+  }
+  else
+  PlayTones(sdError);
+  Wait(1000);
+}
+
+
+
+/***************************************************************************/
+// propagate -> netto input (net)
+/***************************************************************************/
+
+
+inline void PropagateNeuron(int z){   // Propagierungsfunktion für Neuron nz
+  int i=0;                          // kalkuliert den Gesamt-Input (net)
+  float s=0;                        // abzueglich Schwellwert
+
+  for(i=0;i<ni;i++){
+     s+= (Ni[z][i]*Nw[z][i]);     // gewichtete Summe
+  }
+  Nnet[z]=s-Nthr[z];
+}
+
+
+/***************************************************************************/
+// activate -> output
+/***************************************************************************/
+
+
+inline void ActivateNeuron(int z){         // Aktivierungsfunktion 1 T: x -> [0; +1]
+
+   if (Nnet[z]>0)                   // 0-1-Schwellwertfunktion
+      {Nout[z]=1;}                  // Fkt.-Wert: 0 oder 1
+   else {Nout[z]=0;}
+}
+
+
+/***************************************************************************/
+// Net: Init, Set
+/***************************************************************************/
+
+inline void ResetNeuron(int z){
+
+   int i;
+
+   for (i=0; i<ni; i++) {
+     Ni[z][i]=0;       // Inputs  (Dendrit)
+     Nw[z][i]=0.0;     // Weights (Dendrit)
+   }
+   Nnet[z]=0.0;        // total netto Input (weighted sum)
+   Nthr[z]=0.4;        // threshold
+   Nout[z]=0;          // activation level = output
+}
+
+
+inline void InitAllNeurons(){
+   int z;
+
+   for (z=0; z<nz; z++) {
+        ResetNeuron(z);}
+}
+
+
+/***************************************************************************/
+// Inputs: set and watch
+/***************************************************************************/
+
+
+void InitAllSensors() {
+    SetSensorTouch(0);
+    SetSensorTouch(1);
+    SetSensorTouch(2);
+    SetSensorLowspeed(3);
+}
+
+
+inline void RefreshInputLayer() {  // get sensor inputs + store to neurons
+   int i, z, US1;
+
+   US1=SensorUS(3);
+   for (z=0; z< nz; z++) {
+       Ni[z][0]=SensorValue(0);
+       Ni[z][1]=SensorValue(1);
+       Ni[z][2]=SensorValue(2);
+/*
+       Ni[z][3]=(US1>30)&&(US1<100);   // (0,0): >= 100; (0,1): < 30;
+       Ni[z][4]=(US1<40);              // (1,0): 40-100; (1,1): 30-40;
+*/
+   }
+}
+
+
+/***************************************************************************/
+// Forward Propagation
+/***************************************************************************/
+
+inline void ForwardPropagation() {
+  int z;
+
+  for(z=0; z<nz; z++) {
+     PropagateNeuron(z);
+     ActivateNeuron(z);
+  }
+}
+
+
+/***************************************************************************/
+// Display
+/***************************************************************************/
+
+string MenuText; // bottom line menu text
+  
+task DisplayValues(){
+  int i;  // inputs = sensors
+  int z;  // neuron number = outputs
+  int ibuf;
+  float fbuf;
+
+  while(true) {
+
+    printfsg(0,56,"in..w1....w2....w3...thr..out.To");
+    //printfsg(0,56,"in...................................out.To");
+
+    for(i=0; i<ni; i++) {
+       ibuf= Ni[0][i];                           // neuron inputs
+       printf1g( 0, 48-(9*i),"%1d ",ibuf);       // (all inputs to all neurons)
+    }
+
+
+    for(z=0; z<nz; z++) {
+
+       for (i=0; i<ni; i++) {
+          fbuf=Nw[z][i];
+          printf1g( 9+i*6*3 ,48-(9*z),"%2.1f", fbuf);   // neuron weights
+       }
+
+       fbuf=Nthr[z];
+       printf1g( 9+3*6*3 ,48-(9*z),"%2.1f", fbuf);      // neuron threshold
+
+       fbuf=(Nout[z]);
+       printf1g( 9+ 4*6*3 ,48-(9*z),"%1.0f ", fbuf);    // neuron outputs
+
+
+       //fbuf=Nnet[z];
+       //printf1g( 14+ 4*6*3 ,48-(9*z),"%2.1f  "  , fbuf) // neuron netto input
+    }
+
+    printfsg(0,0,MenuText);
+  }
+}
+
+
+
+/***************************************************************************/
+// Teach and Learn
+/***************************************************************************/
+
+void LearnPerceptronRule() { // Perceptron-Lern-Modus
+  int ErrorCount;
+
+  int   i; // Anzahl Inputs
+  int   j; // Anzahl Ausgabe-Neurons
+  float targOut;
+  int   ibuf;
+  float fbuf;
+  float tOutbuf[nz];
+  bool  autoTeach=false;
+  char key;
+
+  float lf=0.3, lfthr;  // learning factor
+  lfthr=lf/ni;          // smaller learning factor for thrshold learning
+
+  PlayTones(ChordUp);
+
+  do
+  {
+    ErrorCount=0;
+
+    MenuText="-- <<          OK / esc        >> ++"; // Btn left, center/esc, right
+
+    ForwardPropagation();    //  calculate neuron output
+    Wait(1);
+
+    for (j=0; j<nz; j++)    //   up to number of output Neurons
+    {
+      ForwardPropagation(); //  calculate neuron output
+      ClearScreen();
+
+      if (!autoTeach) targOut=Nout[j] ;     //  target output == net output ?
+      else
+      if (autoTeach) targOut=tOutbuf[j] ;   // auto mode: recall former target values
+
+      if (!autoTeach)
+      MenuText="-- <<          OK / esc        >> ++"; // Btn left, center/esc, right
+
+      ibuf=targOut; printf1g( 14+ 4*6*3 ,48-(9*j),"> %1d " , ibuf);
+
+      if (!autoTeach) do                   //  manual target Output correction
+      {
+          key=-1;
+          if (keypressed()) {PlayTones(Blip); key=readkey();}
+
+          if (key==BTNLEFT)  { targOut=0; }
+          else
+          if (key==BTNRIGHT) { targOut=1; }
+
+          ibuf=targOut; printf1g( 14+ 4*6*3 ,48-(9*j),"> %1d " , ibuf);
+
+          Wait(1);
+          
+          if (autoTeach) break;
+          
+      }   while ((key!=BTNCENTER)&&(key!=BTNEXIT));
+
+      if (!autoTeach) tOutbuf[j]=targOut;  // store target output;
+
+      //...................................................
+
+      if (key==BTNEXIT) {               // EXIT Learn program
+          PlayTones(Buzz);
+          return;
+      }
+      //....................................................
+
+                                        // LEARN-Mode START
+      //....................................................
+
+      if (targOut==Nout[j] )            // teachOut correct => do nothing
+      {
+          PlayTones(BlipBlip);
+          Wait(1);
+      }
+      //....................................................
+
+      if (targOut!=Nout[j])             // teachOut wrong  => start learning
+      {
+         PlayTones(Beep);
+         Wait(1);
+         ErrorCount+=1;
+                                               // LEARNING:  Delta-Rule
+          for (i=0; i<ni; i++)                 // for all i (Inputs)
+          {                                    // adjust all weights
+             if ( targOut!=Nout[j]) {
+               Nw[j][i] = Nw[j][i]+ (lf *(targOut-Nout[j]) *Ni[j][i]);
+             }
+          }
+            
+          ForwardPropagation(); //  again calculate enhanced neuron output
+
+          if (targOut!=Nout[j]) // adjust threshold (Delta-Rule, expanded)
+          {
+              Nthr[j] = Nthr[j] - (lfthr*(targOut-Nout[j]));
+          }
+
+      } // if (targOut!=Neuron[j].out)
+      //...................................................
+      PlayTones(Beep);
+
+    } // for j
+
+    MenuText="manual         esc     automatic"; //
+    
+    if ((!autoTeach) && (ErrorCount>0)) do   //  manual or automatic target Output correction?
+    {
+          key=-1;
+          if (keypressed()) {PlayTones(Blip); key=readkey();}
+
+          if (key==BTNLEFT)  { autoTeach=false; } // manual Teach Mode
+          else
+          if (key==BTNRIGHT) { autoTeach=true; }  // switch to Auto Teach Mode
+          Wait(1);
+          
+     }    while ((key==-1));
+
+    if (key==BTNEXIT) {               // EXIT Learn program
+       key=-1;
+       PlayTones(Buzz);
+       return;
+    }
+    key=-1;
+
+  } while (ErrorCount>0);
+
+  Wait(10);
+  PlayTones(Beep);
+}
+
+
+/***************************************************************************/
+// task main
+/***************************************************************************/
+
+task main() {
+
+   char key;
+
+   ClearScreen();
+   TextOut(0,56-8, IRobot+"-"+version);
+   
+   Init();
+   InitAllNeurons();
+   InitAllSensors();
+   Wait(500);
+   ClearScreen();
+
+   start DisplayValues;
+
+
+   while(true) {
+      MenuText="< save    Learn / clear   load >";
+      RefreshInputLayer();
+      ForwardPropagation();
+      key=-1;
+      if (keypressed()) key=readkey();
+      
+      if (key==BTNCENTER) {LearnPerceptronRule(); ClearScreen();}
+      if (key==BTNLEFT  ) {stop DisplayValues; SaveMemory();   ClearScreen(); start DisplayValues;}
+      if (key==BTNRIGHT ) {stop DisplayValues; RecallMemory(); ClearScreen(); start DisplayValues;}
+      if (key==BTNEXIT )  {InitAllNeurons(); ClearScreen(); PlayTones(ChordDn);}
+      
+      Wait(1);
+   }
+
+}
+
+
