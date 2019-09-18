@@ -1,0 +1,169 @@
+// zuletzt geändert am 28.03.2010
+// Ein Programm für ferngesteuerte Segways
+// http://nxt.meinblock.eu
+
+#define GYROSENSOR_IN S1
+#define LINKER_MOTOR_OUT OUT_B
+#define RECHTER_MOTOR_OUT OUT_A
+#define ANZAHL_OFFSET_ERMITTELN 10
+#define PS_FAKTOR 1/16
+#define GS_FAKTOR 5/8
+#define PR_FAKTOR 1/4
+#define GR_FAKTOR 25/2
+#define ML_VERSTAERKUNG 46
+#define WARTEZEIT_MS 5
+
+// alle Daten, die ein Segway so hat
+struct segway {
+    int geschwindigkeitRaeder; //Winkelgeschwindigkeit
+    int positionRaeder;        // Winkel
+    int positionSegway;        // Neigungswinkel
+    int letztePositionRaeder;  // Winkel
+    int geschwindigkeitSegway; //Kippgeschwindigkeit
+    int gyrosensorOffset;
+    int btEmpfangen;
+};
+    
+// Ermittelt die Konstante, bei der der Gyrosensor keine BeweguaktOmega ermittelt.
+int gyrosensorOffsetErmitteln() {
+    SetSensorHTGyro(GYROSENSOR_IN);
+    int addierteOffsetwerte = 0;
+    for (int i = 0; i < ANZAHL_OFFSET_ERMITTELN; i++) {
+        addierteOffsetwerte += SensorHTGyro(GYROSENSOR_IN, 0);
+        Wait(100);
+    }
+    int gyrosensorOffset = addierteOffsetwerte / ANZAHL_OFFSET_ERMITTELN;
+    return gyrosensorOffset;
+}
+
+// Konstruktor für segway-Strukturen
+void segwayKonstruktor(segway &s) {
+    s.letztePositionRaeder = 0;
+    s.btEmpfangen = 0;
+    s.gyrosensorOffset = gyrosensorOffsetErmitteln();
+}
+
+// Überprüft, ob eine Bluetoothverbindung besteht
+bool testBTVerbindung() {
+    bool status = true;
+    if (BluetoothStatus(0) != NO_ERR) {
+        TextOut(0, LCD_LINE1, "keine BT-Verbindung");
+        Wait(1000);
+        status = false;
+    }
+    return status;
+}
+
+// Soll eine Nachricht über BT empfangen, geht funktioniert aber nicht außerhalb des main Tasks
+int btEingang() {
+    int btEmpfangen = 0;
+    string stringBTempfangen;
+    if (ReceiveRemoteString(0, true, stringBTempfangen) == NO_ERR) {
+        btEmpfangen = StrToNum(stringBTempfangen);
+    }
+    return btEmpfangen;
+}
+
+// Ermittelt Zusaetze zum rechten Motor, um den Segway in die gewünschte Richtung zu bewegen
+int zusatzRechterMotor(int btEmpfangen) {
+    switch (btEmpfangen) {
+        case 4:
+            return 10;
+            break;
+        case 6:
+            return -10;
+            break;
+        default:
+            return 0;
+            break;
+    }
+}
+
+// Ermittelt Zusaetze zum linken Motor, um den Segway in die gewünschte Richtung zu bewegen
+int zusatzLinkerMotor(int btEmpfangen) {
+    switch (btEmpfangen) {
+        case 4:
+            return -10;
+            break;
+        case 6:
+            return 10;
+            break;
+        default:
+            return 0;
+            break;
+    }
+}
+
+// Ermittelt Zusaetze, ob falls sich der Segway nach Vorn oder Hinten bewegen soll
+int zusatzVor(int btEmpfangen) {
+    switch (btEmpfangen) {
+        case 8:
+            return -3;
+            break;
+        case 2:
+            return 3;
+            break;
+        default:
+            return 0;
+    }
+}
+
+// Ermittelt die Motorenleistund, die für beide Motoren benötigt wird um den Segway stehen zu lassen, vorwärts oder rückwärts zu bewegen
+int motorLeistungErmitteln(segway &s) {
+    int motorLeistung;
+    const int gyrosensorOffset = s.gyrosensorOffset;
+    
+    // Neigungs- / Winkelgeschwindigkeit (Differenzialer Teil des Segways)
+    s.geschwindigkeitSegway = SensorHTGyro(GYROSENSOR_IN, gyrosensorOffset);
+    
+    // Neugungswinkel (Proportionaler Teil)
+    s.positionSegway += s.geschwindigkeitSegway + zusatzVor(s.btEmpfangen);
+    
+    // Gesamter Drehwinkel der Raeder (Proportionaler Teil der Räder)
+    s.positionRaeder = (MotorTachoCount(LINKER_MOTOR_OUT) + MotorTachoCount(RECHTER_MOTOR_OUT)) / 2;
+
+    // Winkelgeschwindigkeit der Raeder (Differenzialer Teil)
+    s.geschwindigkeitRaeder = s.positionRaeder - s.letztePositionRaeder;
+    s.letztePositionRaeder = s.positionRaeder;
+
+    // Berechnung der Motorenleistung durch einen PD-Regler
+    motorLeistung = s.positionSegway * PS_FAKTOR + s.geschwindigkeitSegway * GS_FAKTOR
+                  + s.positionRaeder * PR_FAKTOR + s.geschwindigkeitRaeder * GR_FAKTOR;
+    motorLeistung += sign(motorLeistung) * ML_VERSTAERKUNG;
+    return motorLeistung;
+}
+
+task main() {
+    Stop(!testBTVerbindung());
+    
+    segway meinSegway;
+    segwayKonstruktor(meinSegway);
+    string stringBTempfangen;
+    int motorLeistung;
+
+    while (meinSegway.btEmpfangen != 9){
+//        meinSegway.btEmpfangen = btEingang(); //Empfangen kann man nicht in eine extra Funktion schreiben
+        if(ReceiveRemoteString(0, true, stringBTempfangen) == NO_ERR) {
+            meinSegway.btEmpfangen = StrToNum(stringBTempfangen);
+        }
+
+        motorLeistung = motorLeistungErmitteln(meinSegway);
+
+        // Motoren ansteuern
+        SetOutput(RECHTER_MOTOR_OUT, Power, motorLeistung + zusatzRechterMotor(meinSegway.btEmpfangen),
+                  OutputMode, OUT_MODE_MOTORON,    // lässt Motoren auslaufen
+                  RunState, OUT_RUNSTATE_RUNNING,  // aktiviert Motorenleistung
+                  UpdateFlags, UF_UPDATE_SPEED     // erlaubt die Änderung von der Motorenleistung
+                  );
+        SetOutput(LINKER_MOTOR_OUT, Power, motorLeistung + zusatzLinkerMotor(meinSegway.btEmpfangen),
+                  OutputMode, OUT_MODE_MOTORON,
+                  RunState, OUT_RUNSTATE_RUNNING,
+                  UpdateFlags, UF_UPDATE_SPEED
+                  );
+                  
+        // warten, damit der Regler nicht zu schnell oder zu langsam reagiert
+        Wait(WARTEZEIT_MS);
+    }
+    Off(LINKER_MOTOR_OUT);
+    Off(RECHTER_MOTOR_OUT);
+}
