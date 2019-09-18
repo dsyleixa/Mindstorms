@@ -1,0 +1,160 @@
+#download "3DShapeOne.ric"
+#download "3DShapeTwo.ric"
+#download "3DShapeThree.ric"
+#download "3DShapeFour.ric"
+#download "3DShapeFive.ric"
+#download "3DShapeSix.ric"
+#download "3DShapeSeven.ric"
+#download "3DShapeEight.ric"
+#download "Shape3D.ric"
+task Box() {
+int X, Y, X2, Y2;
+SetAbortFlag(BTNSTATE_NONE);
+until (ButtonPressed(BTNCENTER, true) && ButtonPressed(BTNEXIT, true)) {
+X2 = 40 - X;
+Y2 = 40 - Y;
+RectOut(X2, Y2, 40, 50, true);
+LineOut(X, Y, X2, Y2);
+LineOut(X, (Y + 50), X2, Y2 + 50);
+LineOut(X, (Y + 50), X, Y);
+LineOut(X2 + 40, Y2, (X + 40), Y);
+LineOut(X, Y, (X + 40), Y);
+LineOut(X, (Y + 50), (X + 40), (Y + 50));
+LineOut((X + 40), Y, (X + 40), (Y + 50));
+LineOut((X + 40), (Y + 50), X2 + 40, Y2 + 50);
+if (ButtonPressed(BTNLEFT,true) && X > 5)
+{
+  X--;
+}
+if (ButtonPressed(BTNRIGHT,true) && X < 35)
+{
+  X++;
+}
+if (ButtonPressed(BTNCENTER,true) && Y < 35)
+{
+  Y++;
+}
+if (ButtonPressed(BTNEXIT,true) && Y > 5)
+{
+  Y--;
+}
+Wait(35);
+}
+}
+///////////////////////////
+task Pipe() {
+int X, Y, X2, Y2;
+SetAbortFlag(BTNSTATE_NONE);
+until (ButtonPressed(BTNCENTER,true) && ButtonPressed(BTNEXIT,true)) {
+Y2 = 40 - Y;
+X2 = 40 - X;
+CircleOut(X2, Y2, 30, true);
+CircleOut(X, Y, 30);
+LineOut((X - 22), (Y - 22), (X2 - 22), (Y2 - 22));
+LineOut((X + 22), (Y - 22), (X2 + 22), (Y2 - 22));
+LineOut((X - 22), (Y + 22), (X2 - 22), (Y2 + 22));
+LineOut((X + 22), (Y + 22), (X2 + 22), (Y2 + 22));
+if (ButtonPressed(BTNLEFT,true) && X > 5)
+{
+  X--;
+}
+if (ButtonPressed(BTNRIGHT,true) && X < 35)
+{
+  X++;
+}
+if (ButtonPressed(BTNCENTER,true) && Y < 35)
+{
+  Y++;
+}
+if (ButtonPressed(BTNEXIT,true) && Y > 5)
+{
+  Y--;
+}
+Wait(35);
+}
+}
+///////////////////////////
+task Shapes3D() {
+int type = Random(7);
+if (type == 0)
+{
+  GraphicOut(10, 5, "3DShapeOne.ric", true);
+}
+if (type == 1)
+{
+  GraphicOut(10, 5, "3DShapeTwo.ric", true);
+}
+if (type == 2)
+{
+  GraphicOut(10, 5, "3DShapeThree.ric", true);
+}
+if (type == 3)
+{
+  GraphicOut(10, 5, "3DShapeFour.ric", true);
+}
+if (type == 4)
+{
+  GraphicOut(10, 5, "3DShapeFive.ric", true);
+}
+if (type == 5)
+{
+  GraphicOut(10, 5, "3DShapeSix.ric", true);
+}
+if (type == 6)
+{
+  GraphicOut(10, 5, "3DShapeSeven.ric", true);
+}
+if (type == 7)
+{
+  GraphicOut(10, 5, "3DShapeEight.ric", true);
+}
+until (ButtonCount(BTNCENTER,true));
+}
+task main()
+{
+int LinkNumber;
+GraphicOut(0, 0, "Shape3D.ric", true);
+Wait(SEC_2);
+while (false == ButtonCount(BTNCENTER,true))
+{
+if (LinkNumber == 0)
+{
+TextOut(0, LCD_LINE3, "> Box", true);
+TextOut(0, LCD_LINE4, "  Tube");
+TextOut(0, LCD_LINE5, "  Random");
+}
+if (LinkNumber == 1)
+{
+TextOut(0, LCD_LINE3, "  Box", true);
+TextOut(0, LCD_LINE4, "> Tube");
+TextOut(0, LCD_LINE5, "  Random");
+}
+if (LinkNumber == 2)
+{
+TextOut(0, LCD_LINE3, "  Box", true);
+TextOut(0, LCD_LINE4, "  Tube");
+TextOut(0, LCD_LINE5, "> Random");
+}
+if (1 == ButtonCount(BTNLEFT,true))
+{
+  if (1 == LinkNumber || 2 == LinkNumber)
+  {
+  LinkNumber = LinkNumber - 1;
+  }
+}
+if (1 == ButtonCount(BTNRIGHT,true))
+{
+  if (0 == LinkNumber || 1 == LinkNumber)
+  {
+  LinkNumber = LinkNumber + 1;
+  }
+Wait(50);
+}
+}
+if (0 == LinkNumber)
+  start Box;
+if (1 == LinkNumber)
+  start Pipe;
+if (2 == LinkNumber)
+  start Shapes3D;
+}
