@@ -1,0 +1,58 @@
+
+void DBG () { return; }
+
+/*                  */
+/* Complex Numbers. */
+/* ================ */
+
+/* complex number */
+struct C {
+  float  re,
+         im;
+}  ;
+
+
+/* multply real, complex */
+inline void  C_MUL(float f, C z, C &rz) {
+  rz.re = z.re * f;
+  rz.im = z.im * f;
+}
+
+/* complex product constructor */
+inline void  C_PRO(C z1, C z2, C &rz)  {
+   rz.re = z1.re * z2.re - z1.im * z2.im;
+   rz.im = z1.re * z2.im + z1.im * z2.re;
+}
+
+/* bit reverse permutation */
+void BRP (unsigned char ldN,
+          C & vec[]) /* 2^ldN */
+{
+  unsigned int N;
+  unsigned int l, n, r;
+  unsigned char b;
+  float z;
+
+  N  = 1 << ldN;
+  for (l = 0;  N > l;  ++ l)
+  {
+     n = l;
+     r = 0;
+     for (b = 0;  ldN > b;  ++ b) {
+        r <<= 1;
+        if (0 !=  1 & n ) { r |= 1; }
+        n >>= 1;
+     }  // b
+     if (l < r) {
+        C const z = vec [l];
+        vec [l] = vec [r];
+        vec [r] = z;
+     }  // right
+  }  // k
+  return;
+}  // BRP
+      
+
+task main() {
+      
+}

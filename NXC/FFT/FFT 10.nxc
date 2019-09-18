@@ -1,0 +1,360 @@
+// Fast Fourier Transformation for NXT
+// version 1.0ß
+// source for NXC
+// tested with BricxCC 3.3.8.10
+// orig. ANSI C source:
+// http: //read.pudn.com/downloads92/sourcecode/graph/360640/work3/fft2.h__.htm
+// modified by HaWe 2011
+//
+// user interface (display list + program control)
+// BtnLeft  < scroll back/up array lines
+// BtnRight > scroll fwd/down array lines
+// BtnExit    toggle end/start of array
+// BtnCenter  OK / quit
+
+//--------------------------------------------------
+// IO functions
+//--------------------------------------------------
+
+char LCDline[]={56,48,40,32,24,16,8,0};
+
+#define printf1( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+
+inline bool btnhit(){
+   return ( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+         || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+}
+
+
+void PressToContinue(char Button) {
+   string msg;
+   if (Button==BTNCENTER)   msg="press BtnCntr...";
+   else
+   if (Button==BTNEXIT)     msg="press BtnExit...";
+   else
+   if (Button==BTNRIGHT)    msg="press BtnRight...";
+   else
+   if (Button==BTNLEFT)     msg="press BtnLeft...";
+
+   printf1(0,LCDline[7],"%s", msg);
+   while (!ButtonPressed(Button, false)); while (btnhit());
+}
+
+//--------------------------------------------------
+// math
+//--------------------------------------------------
+
+#define min(a,b) (a<b?a:b)
+
+#define max(a,b) (a>b?a:b)
+
+
+//--------------------------------------------------
+// FFT
+//--------------------------------------------------
+
+const int ArrLen=256;
+float x[ArrLen], y[ArrLen];
+
+
+int FFT(int dir)
+{
+   long  nn,i,i1,j,k,i2,l,l1,l2;
+   float c1,c2,tx,ty,t1,t2,u1,u2,z;
+
+   /* Calculate the number of points */
+
+   int m= log(ArrLen)/log(2);
+
+   nn = 1;
+   for (i=0;i<m;i++)
+      nn *= 2;
+
+   /* Do the bit reversal */
+   i2 = nn >> 1;
+   j = 0;
+   for (i=0;i<nn-1;i++) {
+      if (i < j) {
+         tx = x[i];
+         ty = y[i];
+         x[i] = x[j];
+         y[i] = y[j];
+         x[j] = tx;
+         y[j] = ty;
+      }
+      k = i2;
+      while (k <= j) {
+         j -= k;
+         k >>= 1;
+      }
+      j += k;
+   }
+
+   /* Compute the FFT */
+
+   ClearScreen();
+   printf1(0,LCDline[0],"%s", "Computing FFT... ");
+
+   c1 = -1.0;
+   c2 = 0.0;
+   l2 = 1;
+   for (l=0;l<m;l++) {
+      printf1(0,LCDline[1],"%d", l);
+      l1 = l2;
+      l2 <<= 1;
+      u1 = 1.0;
+      u2 = 0.0;
+      for (j=0;j<l1;j++) {
+         for (i=j;i<nn;i+=l2) {
+            i1 = i + l1;
+            t1 = u1 * x[i1] - u2 * y[i1];
+            t2 = u1 * y[i1] + u2 * x[i1];
+            x[i1] = x[i] - t1;
+            y[i1] = y[i] - t2;
+            x[i] += t1;
+            y[i] += t2;
+         }
+         z =  u1 * c1 - u2 * c2;
+         u2 = u1 * c2 + u2 * c1;
+         u1 = z;
+      }
+      c2 = sqrt((1.0 - c1) / 2.0);
+      if (dir == 1)
+         c2 = -c2;
+      c1 = sqrt((1.0 + c1) / 2.0);
+   }
+
+   /* Scaling for forward transform */
+   if (dir == 1) {
+      for (i=0;i<nn;i++) {
+         x[i] /= nn;
+         y[i] /= nn;
+      }
+   }
+   printf1(0,LCDline[3],"%s", "FFT ready!");
+
+   return(1);
+}
+
+
+void FillArray1() {
+  int i;
+  for (i=0; i<ArrLen; ++i) x[i]=1;
+
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+
+void FillArray101(){
+  int i;
+  for (i=0; i<ArrLen; ++i) x[i]=1;
+  for (i=10; i<20; ++i) x[i]=0;
+
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+
+void FillArraySin() {    // single sin period: wavelength=32
+  int i;
+  for (i=0; i<ArrLen; ++i) x[i]=sin(i*PI*3600.0/(310.0*180.0));
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+void FillArray10Sin() {    // single sin period: wavelength=32
+  int i;
+  for (i=0; i<ArrLen; ++i) x[i]=10*sin(i*PI*3600.0/(310.0*180.0));
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+void FillArraySinAbs() {    // single sin period: wavelength=32
+  int i;
+  for (i=0; i<ArrLen; ++i) x[i]=abs(sin(i*PI*3600.0/(310.0*180.0)));
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+
+void FillArraySin2() {    // double sin periods: wavelength=16
+  int i;
+  for (i=0; i<ArrLen; ++i) x[i]=sin(i*PI*3600.0/(155.0*180.0));
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+void FillArraySin2Sin() {    // double sin periods: wavelength=16
+  int i;
+  for (i=0; i<ArrLen; ++i)
+    x[i]=sin(i*PI*3600.0/(155.0*180.0))+sin(i*PI*3600.0/(310.0*180.0)) ;
+  for (i=0; i<ArrLen; ++i) y[i]=0;
+}
+
+
+void ArrayExtract() {
+  int i;
+  float xmax, ymax, xmin, ymin, xMabs, yMabs;
+
+  xmax=ArrayMax(x, NA, NA);
+  xmin=ArrayMin(x, NA, NA);
+  xMabs=max(abs(xmin), abs(xmax));
+
+  ymax=ArrayMax(y, NA, NA);
+  ymin=ArrayMin(y, NA, NA);
+  yMabs=max(abs(ymin), abs(ymax));
+
+  for (i=0; i<ArrLen; ++i) {
+    if ((x[i]>0) && (x[i]<= xMabs/10))  x[i]=0;
+    if ((x[i]<0) && (x[i]>=-xMabs/10))  x[i]=0;
+    if ((y[i]>0) && (y[i]<= yMabs/10))  y[i]=0;
+    if ((y[i]<0) && (y[i]>=-yMabs/10))  y[i]=0;
+  }
+}
+
+void ArrayExtremes() {
+  int i;
+
+  if ((x[0]>0) && (x[0]<x[1])) x[0]=0;
+  if ((x[0]<0) && (x[0]>x[1])) x[0]=0;
+  if ((x[ArrLen-1]>0) && (x[ArrLen-1]<x[ArrLen-2])) x[ArrLen-1]=0;
+  if ((x[ArrLen-1]<0) && (x[ArrLen-1]>x[ArrLen-2])) x[ArrLen-1]=0;
+
+  
+  if ((y[0]>0) && (y[0]<y[1])) y[0]=0;
+  if ((y[0]<0) && (y[0]>x[1])) y[0]=0;
+  if ((y[ArrLen-1]>0) && (y[ArrLen-1]<y[ArrLen-2])) y[ArrLen-1]=0;
+  if ((y[ArrLen-1]<0) && (y[ArrLen-1]>y[ArrLen-2])) y[ArrLen-1]=0;
+  
+  for (i=1; i<ArrLen-1; ++i) {
+     if ((x[i]>0) && (x[i-1]<x[i]) && (x[i+1]>=x[i]))  x[i]=x[i-1];
+     else
+     if ((x[i]>0) && (x[i-1]>=x[i]) && (x[i+1]<x[i]))  x[i]=x[i+1];
+     else
+     if ((x[i]<0) && (x[i-1]<=x[i]) && (x[i+1]>x[i]))  x[i]=x[i+1];
+     else
+     if ((x[i]<0) && (x[i-1]>x[i]) && (x[i+1]<=x[i]))  x[i]=x[i-1];
+     
+     if ((y[i]>0) && (y[i-1]<y[i]) && (y[i+1]>=y[i]))  y[i]=y[i-1];
+     else
+     if ((y[i]>0) && (y[i-1]>=y[i]) && (y[i+1]<y[i]))  y[i]=y[i+1];
+     else
+     if ((y[i]<0) && (y[i-1]<=y[i]) && (y[i+1]>y[i]))  y[i]=y[i+1];
+     else
+     if ((y[i]<0) && (y[i-1]>y[i]) && (y[i+1]<=y[i]))  y[i]=y[i-1];
+
+  
+  }
+  for (i=ArrLen-2; i>0; --i) {
+     if ((x[i]>0) && (x[i-1]<x[i]) && (x[i+1]>=x[i]))  x[i]=x[i-1];
+     else
+     if ((x[i]>0) && (x[i-1]>=x[i]) && (x[i+1]<x[i]))  x[i]=x[i+1];
+     else
+     if ((x[i]<0) && (x[i-1]<=x[i]) && (x[i+1]>x[i]))  x[i]=x[i+1];
+     else
+     if ((x[i]<0) && (x[i-1]>x[i]) && (x[i+1]<=x[i]))  x[i]=x[i-1];
+
+     if ((y[i]>0) && (y[i-1]<y[i]) && (y[i+1]>=y[i]))  y[i]=y[i-1];
+     else
+     if ((y[i]>0) && (y[i-1]>=y[i]) && (y[i+1]<y[i]))  y[i]=y[i+1];
+     else
+     if ((y[i]<0) && (y[i-1]<=y[i]) && (y[i+1]>y[i]))  y[i]=y[i+1];
+     else
+     if ((y[i]<0) && (y[i-1]>y[i]) && (y[i+1]<=y[i]))  y[i]=y[i-1];
+
+  }
+
+}
+
+void PrintArray2(string caption) {
+   int i, j, k;
+   char ExitBtnSwitchMode=1;    // toggle between ^home and ^end
+
+   float  scale  = 1;
+   string FmtStr = "%6.3f ";
+
+   ClearScreen();
+   printf1(0,LCDline[0], "%s", caption);
+   printf1(0,LCDline[1], "%s", "idx  [x]    [y]");
+
+   i=j=k=0;
+   while(j<ArrLen) {
+     k=0;
+     for (i=0; i<6; ++i) {
+       if (j<ArrLen) {
+          printf1( 0, LCDline[i+2], "%d   ", j);
+          printf1(18, LCDline[i+2], FmtStr, x[j]*scale);
+          printf1(60, LCDline[i+2], FmtStr, y[j]*scale);
+          ++k;
+       }
+       ++j;
+     }
+     if (k<5) {
+       while (k<6) {
+         printf1(0,LCDline[k+2], "%s", "                    ");
+         ++k;
+       }
+     }
+
+     while  (!btnhit());
+     if (ButtonPressed(BTNLEFT, false)) {      // scroll back
+       j=j-12;
+       if (j<0) j=0;
+       if (btnhit()) Wait(300);
+     }
+     else
+     if (ButtonPressed(BTNRIGHT, false)) {     // scroll fwd
+       if (j>ArrLen-5) j=ArrLen-5;
+       if (j<0) j=0;
+       if (j>=ArrLen-5) printf1(0,LCDline[7], "%s", "quit: BtnCenter ");
+       if (btnhit()) Wait(300);
+     }
+     else
+     if (ButtonPressed(BTNCENTER, false)) {    // quit
+       while  (btnhit());
+       if (j<ArrLen-1) j=j-6;
+       if (j<0) j=0;
+     }
+     else
+     if (ButtonPressed(BTNEXIT, false)) {      // last <-> first
+       if (ExitBtnSwitchMode) {
+         j=ArrLen-5;
+         if (j<0) j=0;
+         printf1(0,LCDline[7], "%s", "quit: BtnCenter ");
+       }
+       else {
+         j=0;
+        }
+       ExitBtnSwitchMode^=1;
+       while (btnhit());
+     }
+   }
+   ClearScreen();
+}
+
+
+task main() {
+   int i;
+   char ch;
+
+   SetAbortFlag(BTNSTATE_NONE);
+
+   FillArraySin2Sin();  //  initialize by test values
+   PrintArray2(" FillArraySin()");
+
+   FFT(+1);  //  forward FFT
+
+   PrintArray2(" FFT(+1) ");
+   //PressToContinue(BTNCENTER);
+   
+   ArrayExtract();
+   PrintArray2(" Extract ");
+   
+   ArrayExtremes();
+   PrintArray2(" Extremes ");
+
+   SetAbortFlag(BTNSTATE_PRESSED_EV);
+   PressToContinue(BTNEXIT);
+   
+   while(1);
+
+}

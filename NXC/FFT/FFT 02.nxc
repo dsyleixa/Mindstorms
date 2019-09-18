@@ -1,0 +1,256 @@
+    /* Author: xeraniad                                                           */
+    /* Date: 2011-02-15.                                                          */
+    /* Abstract: Fast Fourier Transform Demonstration.                            */
+
+    /* targeted for NXC (so help me God) ;)
+
+
+
+
+
+
+
+
+void DBG () { return; }
+
+/*                  */
+/* Complex Numbers. */
+/* ================ */
+
+/* complex number */
+struct C {
+  float  re,
+         im;
+}  ;
+
+
+/* multply real, complex */
+inline void  C_MUL(float f, C z, C &rz) {
+  rz.re = z.re * f;
+  rz.im = z.im * f;
+}
+
+/* complex product constructor */
+inline void  C_PRO(C z1, C z2, C &rz)  {
+   rz.re = z1.re * z2.re - z1.im * z2.im;
+   rz.im = z1.re * z2.im + z1.im * z2.re;
+}
+
+
+void FFT_DIT (              /* Decimation In Time  Fast discrete Fourier Transform */
+        unsigned int         N,                      /* a power of 2 (not checked) */
+        unsigned char        fwd ,         /* bool: FALSE: inverse, TRUE: forward. */
+        struct C             vec []  )   /* [N=256] sample values <-> coefficients */
+{
+        unsigned int         D   = 1  /*, 2, 4, 8, ... */;
+        struct C             twi = {re: -1.0, im: 0.0};
+
+        /* bit inverse index permutation */
+        for (unsigned int l = 0; N > l; ++ l) {
+          unsigned int         p = 1,   n = l,  r = 0;
+          while (N > p) {      p <<= 1;
+            r <<= 1;
+            if (0 !=  1 & n) { r |= 1; }
+            n >>= 1;
+          }  /* p */
+          if (l < r) {                                                    /* swap */
+            struct C     const z = vec [l];  vec [l] = vec [r];   vec [r] = z;
+
+            //(void) fprintf (stdout, "#FFT: Swap (%d, %d).\n", (int) l, (int) r);
+
+          }  /* right */
+        }  /* l */
+
+        while (N > D) {
+          unsigned int  const  M   = D;
+          struct C             tp  = {re: 1.0, im: 0.0};
+          D <<= 1;
+
+          //(void) fprintf (stdout, "#FFT: twi = (%f, %f).\n", twi .re, twi .im);
+          //(void) fprintf (stdout, "#FFT: D: %d.\n", (int) D);
+
+          for (unsigned int ofs = 0;  M > ofs;  ++ ofs) {
+
+            //(void) fprintf (stdout, "#FFT: ofs: %d.\n", (int) ofs);
+
+            for (unsigned int L = ofs; N > L;  L += D) {
+              unsigned int  const R    = L +M;
+
+              //(void) fprintf (stdout, "#FFT: Butterfly (%d, %d).\n", (int) L, (int) R);
+
+              struct C      const z    = (struct C) C_PRO (tp ., vec [R] .);
+              vec [R] .re  =  vec [L] .re - z .re;
+              vec [R] .im  =  vec [L] .im - z .im;
+              vec [L] .re  =  vec [L] .re + z .re;
+              vec [L] .im  =  vec [L] .im + z .im;
+              if (fwd) {  vec [L] .re *= 0.5;  vec [L] .im *= 0.5;
+                          vec [R] .re *= 0.5;  vec [R] .im *= 0.5; }   /* forward */
+            }  /* L */
+            tp = (struct C) C_PRO (twi ., tp .);
+
+            //(void) fprintf (stdout, "#FFT: tp = (%f, %f).\n", tp .re, tp .im);
+
+          }  /* ofs */
+          do {                                                    /* exp(±j·pi÷D) */
+            double const c2 = 0.5 * twi .re;   /* c2 = ½·cos(ß+ß) */
+            twi .re = sqrt (0.5 + c2);             /* c2 = cos²(ß) -½ */
+            twi .im = sqrt (0.5 - c2);             /* c2 = ½ -sin²(ß)  */
+            if (fwd)  twi .im = -twi .im;
+          }  while (FALSE);
+        }  /* while N > D */
+        return;
+      }  /* FFT_DIT */;
+
+
+      #define FNM_CPC  255      /* file name string capacity */
+
+//      #include "fft_i.h"
+//      #include "fft_i.cpp"
+
+      #define N_       256      /* sample length - a power of 2 */
+
+
+//******************************************************************************
+
+    int main (int argc, char const * argv [])
+    { if (1 == argc) {                                                 /* no args */
+        struct C           c   [FFT_F_] [N_] = {{0.0,}, };     /* samples /coeffs */
+        unsigned int const M_ = N_ >> 1;                                  /* ½·N_ */
+
+        for (unsigned char sig = 0;  FFT_F_ > sig;  ++ sig) {
+          do {                                           /* prepare sample values */
+            double             avg = 0.0,     /* average */
+                               pwr = 0.0;     /* power  */
+            unsigned int const lim = FFT_n [sig] <= N_ ? FFT_n [sig] : N_;
+            for (unsigned int n = 0;  lim > n;  ++ n) {
+              avg += FFT_f [sig] [n];
+            }  /* n */
+            avg /= lim;
+
+            for (unsigned int n = 0;  lim > n;  ++ n) {
+              c [sig][n] .re = FFT_f [sig] [n] -avg;
+              pwr += c [sig][n] .re * c [sig][n] .re;
+            }  /* n */
+            pwr /= N_;
+
+            do {                                                     /* normalize */
+              double      const    q = 1.0 / sqrt (pwr);
+              for (unsigned int n = 0;  lim > n;  ++ n) {
+                c [sig][n] .re *= q;
+              }  /* n */
+            }  while (FALSE);
+          }  while (FALSE);
+/*
+          do {                                // write sample to text file & plot
+            char           fnm [1 +FNM_CPC];
+            FILE         * txt;
+            (void) snprintf (fnm, FNM_CPC, "soundpatterns/gp_%d_n.tmp", (int) sig);
+            txt = fopen (fnm, "w");
+            if ((FILE *) NULL != txt) {
+
+              for (unsigned int n = 0;  N_ > n;  ++ n) {
+                (void) fprintf (txt, "%d %f\n", (int) n, c [sig][n] .re);
+              }  // n
+              (void) fclose (txt);
+
+              (void) fprintf (stdout, "set xrange [0:%d-1]\n", (int) N_);
+              (void) fprintf (stdout, "set xlabel \"%s\"\n", FFT_lbl [sig]);
+              (void) fprintf (stdout, "set terminal png\n");
+              (void) fprintf (stdout, "set output \'soundpatterns/gp_%d_n.png\'\n",
+                                          (int) sig);
+              (void) fprintf (stdout, "plot \'%s\' using 1:2 with impulses\n", fnm);
+              (void) fprintf (stdout, "unset output\n");
+
+            }  // file open
+*/
+
+          }  while (FALSE);
+          
+
+        /* perform FFT */
+          FFT_DIT (N_, TRUE, c [sig]);
+
+          do {                       /* write amount spectrum to text file & plot */
+            char           fnm [1 +FNM_CPC];
+            FILE         * txt;
+            (void) snprintf (fnm, FNM_CPC, "soundpatterns/gp_%d_k.tmp", (int) sig);
+            txt = fopen (fnm, "w");
+            if ((FILE *) NULL != txt) {
+              (void) fprintf (txt, "0 %f\n", c [sig][0] .re);
+              for (unsigned int k = 1;  M_ > k;  ++ k) {
+                double const eff = sqrt (2.0 * (c [sig][k] .re * c [sig][k] .re
+                                             +  c [sig][k] .im * c [sig][k] .im));
+                (void) fprintf (txt, "%d %f\n", (int) k, eff);
+              }  /* n */
+              if (0 != M_)  /* Nyqist term @ ½·N_ */
+                (void) fprintf (txt, "%d %f\n", (int) M_, c [sig][M_] .re);
+              (void) fclose (txt);
+
+              (void) fprintf (stdout, "set xrange [0:%d]\n", (int) M_);
+              (void) fprintf (stdout, "set xlabel \"%s trig. polynomial coeff.\"\n",
+                          FFT_lbl [sig]);
+              (void) fprintf (stdout, "set terminal png\n");
+              (void) fprintf (stdout, "set output \'soundpatterns/gp_%d_k.png\'\n",
+                                          (int) sig);
+              (void) fprintf (stdout, "plot \'%s\' using 1:2 with impulses\n", fnm);
+              (void) fprintf (stdout, "unset output\n");
+            }  /* file open */
+          }  while (FALSE);
+        }  /* sig */
+
+
+      /* cross correlation functions */
+        for (unsigned char s_f = 0;  FFT_F_ > s_f;  ++ s_f) {
+          for (unsigned char s_g = s_f;  FFT_F_ > s_g;  ++ s_g) {
+
+          /* conj(F)·G */
+            struct C           ccf   [N_];
+            for (unsigned int k = 0; N_ > k;  ++ k) {
+              struct C const cfk = {re: c [s_f][k] .re,  im: -c [s_f][k] .im};
+              ccf [k] = (struct C) C_PRO (cfk ., c [s_g][k] .);
+            }  /* k */
+
+          /* ccf */
+            FFT_DIT (N_, FALSE, ccf);                          /* -> ccf[].im = 0 */
+
+          /* max */
+            unsigned int max = 0;
+            for (unsigned int n = 1; N_ > n; ++ n)
+              if (ccf [max] .re < ccf [n] .re) max = n;
+
+          /* display */
+            do {          /* write cross correlation function to text file & plot */
+              char           fnm [1 +FNM_CPC];
+              FILE         * txt;
+              (void) snprintf (fnm, FNM_CPC, "soundpatterns/gp_%d_%d.tmp",
+                                       (int) s_f, (int) s_g);
+              txt = fopen (fnm, "w");
+              if ((FILE *) NULL != txt) {
+                for (unsigned int n = 0;  N_ > n;  ++ n) {
+                  (void) fprintf (txt, "%d %f %f\n", (int) n,
+                             ccf [n] .re, ccf [n] .im  /* just check */);
+                }  /* n */
+                (void) fclose (txt);
+
+                (void) fprintf (stdout, "set xrange [0:%d-1]\n", (int) N_);
+                (void) fprintf (stdout,
+                            "set xlabel \"%s vs. %s, ccf=%f @n=%d.\"\n",
+                                 FFT_lbl [s_f], FFT_lbl [s_g], ccf[max].re, max);
+                (void) fprintf (stdout, "set terminal png\n");
+                (void) fprintf (stdout,
+                          "set output \'soundpatterns/gp_%d_%d.png\'\n",
+                                            (int) s_f, (int) s_g);
+                (void) fprintf (stdout, "plot \'%s\' using 1:2 with impulses\n",
+                         fnm);
+                (void) fprintf (stdout, "unset output\n");
+              }  /* file open */
+            }  while (FALSE);
+          }  /* g */
+        }  /* f */
+
+      } else {                                          /* unexpected argument(s) */
+        (void) fprintf (stderr, "%s: No arguments expected.\n", argv [0]);
+        return 1;
+      }  /* no arguments - else */
+      return 0;
+    }  /* main */

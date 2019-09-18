@@ -1,0 +1,17 @@
+
+
+
+task main() {
+   int m;
+
+   m= 32;             NumOut(0,56, m);
+   m= log(m)/log(2);  NumOut(60,56, m);
+   
+   m= 1024;           NumOut(0,48, m);
+   m= log(m)/log(2);  NumOut(60,48, m);
+   
+   
+   while(1);
+
+
+}
