@@ -1,0 +1,399 @@
+///////////////////////////////////////////////////////////////////////////////
+// "speech" recognition
+//
+/**/ string version="1.07";
+//
+///////////////////////////////////////////////////////////////////////////////
+// programming language: NXC for Mindstorms NXT
+// author: HaWe 2011
+///////////////////////////////////////////////////////////////////////////////
+// speak, and watch the real-time oscillograph.
+// as soon as the oscillograph appears you may press BtnCenter to store.
+// choose the slot to store by <<BtnLeft or  >>BtnRight
+// press BtnCenter again to store, or press BtnExit to delete the pattern
+///////////////////////////////////////////////////////////////////////////////
+
+// io functions
+//*****************************************
+
+#define printf1( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+//*****************************************
+
+char LCDline[]={56,48,40,32,24,16,8,0};
+
+//*****************************************
+
+safecall bool btnhit(){
+   return ( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+         || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+}
+
+//*****************************************
+
+safecall int cin() {
+  int result = -1;
+
+    if (ButtonPressed(BTN1, false))
+      result = BTN1;
+    else if (ButtonPressed(BTN2, false))
+      result = BTN2;
+    else if (ButtonPressed(BTN3, false))
+      result = BTN3;
+    else if (ButtonPressed(BTN4, false))
+      result = BTN4;
+
+    return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define MinPause  80
+#define dbOffset  30
+#define RecLen   128
+#define RecSlots  16
+
+int  BGrndNoise=50;
+int  SoundRecord[RecLen];             // detection: 0...RecLen:
+int  SoundPattern[RecSlots][RecLen];  // patterns
+char key;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// File I/O
+///////////////////////////////////////////////////////////////////////////////
+
+inline void SoundExport() { // Data Export format: number-strings, seperated by ";"
+
+  string sFileName = "FILE_EXP.dat";
+
+  unsigned int nFileSize = (RecLen*4); //3 byte for number (text) plus 1 (";") each
+  byte fHandle;
+  int IOresult, counter=0;
+  int ibuf, i;
+  string s;
+  
+  ClearScreen();
+  TextOut( 0,48, "SpeechRecogn "+version);
+
+  DeleteFile(sFileName);
+  IOresult = CreateFile(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    ClearScreen();
+    for (i=0; i<RecLen; i++)   {
+        counter+=1;
+        ibuf= SoundRecord[i];
+
+        printf1( 0, 32, "counter =%5d", counter);
+        printf1( 0, 24, "loudness=%5d", ibuf);
+
+        s=NumToStr(ibuf);
+        s=s + ";" ;
+        fputs(s, fHandle);
+    }
+    CloseFile(fHandle);
+    printf1( 0,16, "%s", "! FILE STORED !");
+  }
+  else  {
+    printf1( 0,16, "%s", "Error-Save-Error");
+    Wait(1000);
+  }
+
+}
+
+//*****************************************
+
+void WordSave(byte slot, bool saveIt) {
+
+  string s, sFileName;
+  
+  unsigned int nFileSize = (RecLen*4); // integer (2) + CR (1) + LF (1) bytes
+  byte fHandle;
+  int IOresult, counter=0;
+  int ibuf, i;
+
+  s=FormatNum("%04d", slot);
+  sFileName=StrCat(s, ".wpt");
+
+  ClearScreen();
+  TextOut( 0,48, "SpeechRecogn "+version);
+
+  DeleteFile(sFileName);
+  
+  if (saveIt==FALSE) return;
+  
+  IOresult = CreateFile(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    ClearScreen();
+    for (i=0; i<RecLen; i++)   {
+        counter+=1;
+        ibuf= SoundPattern[0][i];
+
+        printf1( 0, 24, "counter =%5d", counter);
+        printf1( 0, 16, "loudness=%5d", ibuf);
+
+        WriteLn(fHandle, ibuf);
+    }
+    CloseFile(fHandle);
+    printf1( 0,16, "%s", "! FILE STORED !");
+  }
+  else  {
+    ClearScreen();
+    printf1( 0,16, "%s", "Error-Save-Error");
+    Wait(1000);
+  }
+}
+
+//*****************************************
+
+void LoadLanguageCenter() {
+
+  string sFileName;
+
+  unsigned int nFileSize;
+  byte fHandle;
+  int IOresult;
+  int ibuf, i, j=0, slot;
+  string s;
+
+  ClearScreen();
+  TextOut( 0,48, "SpeechRecogn "+version);
+
+  ListFilesType SearchRec;
+  SearchRec.Pattern = "*.wpt";
+  SysListFiles(SearchRec);
+
+  while (SearchRec.Result == NO_ERR && j < ArrayLen(SearchRec.FileList))
+  {
+    sFileName=SearchRec.FileList[j];
+    TextOut(0, LCDline[0], sFileName);
+    s=SubStr(sFileName, 0, 4);
+    slot=StrToNum(s);
+    printf1( 0, LCDline[1], "slot=%3d", slot);
+
+    IOresult = OpenFileRead(sFileName, nFileSize, fHandle);
+    if (IOresult == LDR_SUCCESS) {
+      for (i=0; i<RecLen; i++)   {
+        ReadLn (fHandle, ibuf);
+        SoundPattern[slot][i]=ibuf;
+
+        printf1( 0, LCDline[2], "counter =%5d", i);
+        printf1( 0, LCDline[3], "loudness=%5d", ibuf);
+      }
+
+      CloseFile(fHandle);
+      printf1( 0, LCDline[7], "FILE%3d RELOADED!", slot);
+    }
+    else {
+      ClearScreen();
+      printf1( 0, LCDline[7], "! ERROR ! FILE%3d", slot);
+      Wait(1000);
+    }
+    ClearLine(LCDline[1]);
+    ClearLine(LCDline[2]);
+    ClearLine(LCDline[3]);
+    j++;
+  }
+  
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+task SoundCheck() {
+  int    dbMax,   // max loudness
+         t,       // timer counter
+         p,       // pause counter
+         i, j,    // index
+         peak,    // for oscilligraph
+         slot=1,  // slot for sound records
+         j_best,  // slot which matchs best
+         buf;
+  long   SoundLevel,  // for choosing the best pattern
+         sum[RecLen], //
+         sum_min,     //
+         d2;          //
+  string str;     //
+
+  while(true) {
+    str=".";
+    SoundLevel=SensorValue(S2);
+    printf1(0,LCDline[0], "%s", "BGrndNoise=");
+    printf1(60,LCDline[0], "%4d", SoundLevel);
+
+    Wait(4);
+
+    ////////////////////////////////////////
+    //  record if min sound level reached //
+    ////////////////////////////////////////
+
+    if (SoundLevel>(BGrndNoise + dbOffset)) {
+      p=dbMax=0;
+      t=1;
+      key=-1;
+
+      ClearScreen();
+      ArrayInit (SoundRecord, 0, RecLen);
+      while (t<RecLen-1) {
+        SoundLevel=SensorValue(S2)-BGrndNoise;
+
+        if (SoundLevel > dbMax) dbMax=SoundLevel;
+
+        // if observe Pause then Rec_Stop
+        p= (SoundLevel<dbOffset)? p+1 : 0;
+        if (p==MinPause) break;
+
+        if (t%2==0) {
+          peak=SoundLevel;
+          LineOut ((t+1)/2, 0, (t+1)/2, peak/8);
+        }
+
+        printf1(0, LCDline[0], "%s", "store: press BtnCtr" );
+        //..........................
+        if (btnhit() && key==-1) key=cin();
+        //..........................
+
+        //////////////////////////////////////////
+        //   normalize to sound level steps     //
+        //////////////////////////////////////////
+        
+        SoundRecord[t]=(SoundLevel*128)/dbMax;
+        if (SoundLevel < BGrndNoise)
+          SoundPattern[0][t]=0;
+        else
+          SoundPattern[0][t]=(8*SoundRecord[t])/8;
+        
+        Wait(7);
+        t++;
+        if(t%25==0) str+=".";
+      }
+      SoundRecord[0]=t;                  // store current recording duration
+
+      printf1(0, LCDline[0], "%s", "store: press BtnCtr" );
+      if (t<100) Wait(200);
+
+      for (i=t; i<RecLen; i++) {
+         SoundPattern[0][i]=0;           // fill slot pattern with "0"
+      }
+      SoundPattern[0][0]=SoundRecord[0]; // store current recording duration
+
+      if (btnhit()) key=getchar();       // wait until Btn up
+      
+      // SoundExport();
+
+      //////////////////////////////////////////
+      //   allow sound record to be stored    //
+      //////////////////////////////////////////
+
+      ClearScreen();
+
+      if ( key == BTNCENTER ) {
+         key=-1;
+         printf1(0, LCDline[1], "%s", "store in slot:");
+         printf1(0, LCDline[7], "%s", "<<-1 OK/del +1>>");
+         while (key!=BTNEXIT && key!=BTNCENTER) {
+           printf1(0, LCDline[2], "%2d", slot);
+           key=getchar();
+
+           if (key==BTNLEFT) {
+             if (slot>1) slot--;
+             else
+             if (slot==1) slot=RecSlots-1;
+           }
+           else
+           if (key==BTNRIGHT) {
+             if (slot<RecSlots-1) slot++;
+             else
+             if (slot==RecSlots-1) slot=1;
+           }
+           else
+           if (key==BTNCENTER) {
+             for (i=0; i<RecLen; i++) {
+               SoundPattern[slot][i]=SoundPattern[0][i];
+             }
+             printf1(1, LCDline[2], "stored: Slot %2d", slot );
+             WordSave(slot, TRUE);
+             Wait(300);
+           }
+           else
+           if (key==BTNEXIT) {
+             for (i=0; i<RecLen; i++)  {
+               SoundPattern[slot][i]=0;
+             }
+             printf1(1, LCDline[2], "deleted:Slot %2d", slot );
+             WordSave(slot, FALSE);
+             Wait(300);
+
+           }
+         } // while
+         ClearScreen();
+         key=-1;
+
+      }
+
+      else
+
+      //////////////////////////////////////////
+      //  compare and recognize sound record  //
+      //////////////////////////////////////////
+
+      {
+        sum_min=LONG_MAX; j_best=INT_MAX;
+        str=".";
+        for (j=1; j<RecSlots; j++) {
+          TextOut(0, LCDline[1], str);
+          sum[j]=0;
+          if (SoundPattern[j][0]>10) {
+            for (i=1; i < RecLen; i++) {
+              d2=(SoundPattern[0][i]-SoundPattern[j][i]);
+              sum[j]=sum[j] + d2*d2;
+            }
+          }
+          else {
+            sum[j]=LONG_MAX;
+          }
+          buf=sum[j];
+
+          if (sum[j]<sum_min) {
+            sum_min=sum[j];
+            j_best=j;
+
+          }
+          str+=".";
+        } // for j
+
+        ClearLine(LCDline[1]);
+        if (j_best< INT_MAX)
+          printf1(0, LCDline[1], "recogn=Pattern%2d", j_best );
+
+      } // else compare
+    }
+
+  } // while true
+} // SoundCheck
+
+void init() {
+  unsigned long sbuf;
+  SetLongAbort(true);
+  SetSensorType(S2, SENSOR_TYPE_SOUND_DBA);
+  SetSensorMode(S2, SENSOR_MODE_RAW);
+
+  for (int i=0; i<1000; i++) sbuf+=SensorValue(S2);
+  BGrndNoise=sbuf/1000;
+}
+
+task main(){
+  init();
+  LoadLanguageCenter();
+
+  StartTask(SoundCheck);
+  while (true)  {
+
+  }
+}
+
+

@@ -1,0 +1,91 @@
+#define printf1( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+#define printf2( _x, _y, _format1, _format2, _value1, _value2) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  string sval2 = FormatNum(_format2, _value2); \
+  string s =sval1+sval2; \
+  TextOut(_x, _y, s); \
+}
+
+char LCDline[]={56,48,40,32,24,16,8,0};
+
+int SoundLevel, BGrndNoise=50, dbMin, dbMax;
+int SoundRecord[250][2];   // detection: 0...249: pattern; >250: pause
+#define MinPause  80
+#define dbOffset  60
+
+task RecordSound() {
+  int t,     // timer counter
+      p,     // pause counter
+      x, y,  // SoundRecord write dim
+      i, j,  // SoundRecord read dim  counter
+      buf;
+  string progress;
+  
+  while(true) {
+    progress=".";
+    SoundLevel=SensorValue(S2);
+    printf1(0,LCDline[0], "SoundLevel=%4d", SoundLevel);
+    if (SoundLevel>(BGrndNoise + dbOffset)) {
+      x=y=p=t=0;
+      dbMax=0;
+      ClearLine(LCDline[7]);
+      while (t<500) {
+        x=t%250;
+        y=t/250;
+        SoundRecord[x][y]=SoundLevel=SensorValue(S2);
+        printf1(0,LCDline[1], "Rec  =%4d", SoundLevel);
+        if ((SoundLevel > BGrndNoise) && (SoundLevel > dbMax))
+          dbMax=SoundLevel;
+
+        // if observe Pause then Rec_Stop
+        p= (SoundLevel<dbOffset)? p+1 : 0;
+        if (p==MinPause) break;
+        
+        printf1(0, LCDline[7], "%s", progress);
+        Wait(3);
+        t++;
+        if(t%25==0) progress=progress+".";
+      }
+      SoundRecord[249][1]=t-MinPause; // sound rec length
+      
+      printf2(0, LCDline[6], "len=%3d", " max=%4d", t, dbMax);
+
+      ClearLine(LCDline[1]);
+      ClearLine(LCDline[7]);
+
+      progress=".";
+      for (i=0; i<499; i++) {
+        x=i%250;
+        y=i/250;
+        buf=SoundRecord[x][y];
+        if (buf>BGrndNoise)
+          SoundRecord[x][y]=buf=buf*1023/dbMax; // normalize loudness spectrum
+        printf2(0, LCDline[5], "i=%4d", " db=%4d", i, buf );
+        printf1(0, LCDline[7], "%s", progress);
+        if ((i%25==0)&&(i<t)) progress=progress+".";
+        Wait(3);
+      }
+      printf1(0,LCDline[4], "dur=%3d", SoundRecord[249][1]);
+      ClearLine(LCDline[7]);
+    }
+  }
+}
+
+task main(){
+
+  SetSensorType(1, SENSOR_TYPE_SOUND_DBA);
+  SetSensorMode(1, SENSOR_MODE_RAW);
+  
+  Wait(500);
+  BGrndNoise=SensorValue(S2)+18;
+  
+  StartTask(RecordSound);
+  while (true)  {
+
+
+  }
+}

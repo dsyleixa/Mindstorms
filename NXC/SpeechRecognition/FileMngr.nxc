@@ -1,0 +1,121 @@
+//**************************************************************************
+// File I/O
+//**************************************************************************
+
+
+void SoundExport() {   // Data Export format: number-strings, seperated by ";"
+
+  string sFileName = "FILE_EXP.dat";
+
+  unsigned int nFileSize = (MaxRecLen*4); //3 byte for number (text) plus 1 (";") each
+  byte fHandle;
+  int IOresult, counter=0;
+  int ibuf, i;
+  string s;
+
+  ClearScreen();
+  TextOut( 0,48, "SpeechRecogn "+version);
+
+
+  DeleteFile(sFileName);
+  IOresult = CreateFile(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    ClearScreen();
+    for (i=0; i<MaxRecLen; i++)   {
+        counter+=1;
+        ibuf= SoundRecord[i];
+
+        printf1( 0, 32, "counter =%5d", counter);
+        printf1( 0, 24, "loudness=%5d", ibuf);
+
+        s=NumToStr(ibuf);
+        s=s + ";" ;
+        fputs(s, fHandle);
+    }
+    CloseFile(fHandle);
+    printf1( 0,16, "%s", "! FILE STORED !");
+  }
+  else  {
+    printf1( 0,16, "%s", "Error-Save-Error");
+    Wait(1000);
+  }
+
+}
+
+//*****************************************
+
+void WordSave(byte slot) {
+
+  string s, sFileName;
+
+  unsigned int nFileSize = (MaxRecLen*4); //3 byte for number (text) plus 1 (";") each
+  byte fHandle;
+  int IOresult, counter=0;
+  int ibuf, i;
+
+  s=FormatNum("%04d", slot);
+  sFileName=StrCat(s, ".wpt");
+
+  ClearScreen();
+  TextOut( 0,48, "SpeechRecogn "+version);
+
+
+  DeleteFile(sFileName);
+  IOresult = CreateFile(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+    ClearScreen();
+    for (i=0; i<MaxRecLen; i++)   {
+        counter+=1;
+        ibuf= SoundRecord[i];
+
+        printf1( 0, 24, "counter =%5d", counter);
+        printf1( 0, 16, "loudness=%5d", ibuf);
+
+        WriteLn(fHandle, ibuf);
+    }
+    CloseFile(fHandle);
+    printf1( 0,16, "%s", "! FILE STORED !");
+  }
+  else  {
+    printf1( 0,16, "%s", "Error-Save-Error");
+    Wait(1000);
+  }
+}
+
+//*****************************************
+
+void WordsRecall() {
+
+  string sFileName = "FILE_000.dat";
+
+  unsigned int nFileSize;
+  byte fHandle, i;
+  int IOresult, counter=0;;
+  int ibuf;
+
+  ClearScreen();
+  TextOut( 0,48, "SpeechRecogn "+version);
+
+  IOresult = OpenFileRead(sFileName, nFileSize, fHandle);
+  if (IOresult == LDR_SUCCESS) {
+
+    for (i=0; i<MaxRecLen; i++)   {
+
+        counter+=1;
+        ReadLn (fHandle, ibuf);
+        SoundRecord[i]=ibuf;
+
+        printf1( 0, 24, "counter =%5d", counter);
+        printf1( 0, 16, "loudness=%5d", ibuf);
+    }
+
+    CloseFile(fHandle);
+    printf1( 0,16, "%s", "! FILE STORED !");
+  }
+  else
+  printf1( 0,16, "%s", "Error-Save-Error");
+  Wait(1000);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////

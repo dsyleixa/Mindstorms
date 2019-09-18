@@ -1,0 +1,193 @@
+
+// NXC for Mindstorms NXT
+// "speech" "recognition" 0.12
+
+///////////////////////////////////////////////////////////////////////////////
+#define printf1( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+#define printf2( _x, _y, _format1, _format2, _value1, _value2) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  string sval2 = FormatNum(_format2, _value2); \
+  string s =sval1+sval2; \
+  TextOut(_x, _y, s); \
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+inline bool btnhit(){
+   return ( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+         || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+}
+
+
+char LCDline[]={56,48,40,32,24,16,8,0};
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define MinPause  80
+#define dbOffset  60
+
+int  SoundLevel, BGrndNoise=50, dbMax;
+int  SoundRecord[400];        // detection: 0...400:
+byte SoundPattern[400][8];   // patterns
+char key;
+
+task SoundCheck() {
+  int t,     // timer counter
+      p,     // pause counter
+      i, j,  // index
+      j_best,
+      d2,
+      buf;
+  long sum[400], sum_min;
+  string str;
+
+  while(true) {
+    str=".";
+    SoundLevel=SensorValue(S2);
+    printf1(0,LCDline[0], "%s", "SoundLevel=");
+    printf1(70,LCDline[0], "%4d", SoundLevel);
+
+    ////////////////////////////////////////
+    //  record if min sound level reached //
+    ////////////////////////////////////////
+    if (SoundLevel>(BGrndNoise + dbOffset)) {
+      p=dbMax=0;
+      t=1;
+      key=-1;
+      ClearLine(LCDline[7]);
+      ClearLine(LCDline[3]);
+      while (t<400) {
+        SoundRecord[t]=SoundLevel=SensorValue(S2);
+
+        printf1(70,LCDline[0], "%4d", SoundLevel);
+        if (SoundLevel > dbMax) dbMax=SoundLevel;
+
+        // if observe Pause then Rec_Stop
+        p= (SoundLevel<dbOffset)? p+1 : 0;
+        if (p==MinPause) break;
+
+        printf1(0, LCDline[7], "%s", str);
+
+        Wait(3);
+        t++;
+        if(t%25==0) str+=".";
+      }
+      SoundRecord[0]=t-MinPause; // sound rec length
+
+      printf2(0, LCDline[6], "len=%3d", " max=%4d", t, dbMax);
+
+      ClearLine(LCDline[1]);
+      ClearLine(LCDline[7]);
+
+      printf1(0, LCDline[7], "%s", "press key to store..." );
+
+      //..........................
+      if (btnhit()) key=getchar();
+      //..........................
+
+      //////////////////////////////////////////
+      //    stretch sound level spectrum      //
+      //////////////////////////////////////////
+      for (i=1; i<400; i++) {
+        buf=SoundRecord[i];
+        if (buf>BGrndNoise)
+          SoundRecord[i]=buf*127/dbMax; // normalize loudness spectrum
+        if (1>SoundRecord[0]) SoundRecord[i] =0;
+      }
+
+      //..........................
+      if (btnhit()) key=getchar();
+      //..........................
+
+      //////////////////////////////////////////
+      //   normalize to sound level steps     //
+      //////////////////////////////////////////
+      for (i=1; i<t; i++) {
+        buf=SoundRecord[i];
+        if (buf>96)
+          SoundPattern[i][0]=127; // max loudness
+        else
+
+        if (buf>48)
+          SoundPattern[i][0]=64; //
+        else
+        if (buf>24)
+          SoundPattern[i][0]=32; //
+        else
+        if (buf>12)
+          SoundPattern[i][0]=16; // min loudness
+        else
+          SoundPattern[i][0]=0;  // silence
+      }
+
+      SoundPattern[0][0]=SoundRecord[0];
+
+      //////////////////////////////////////////
+      //   allow sound record to be stored    //
+      //////////////////////////////////////////
+      //..........................
+      if (btnhit()) key=getchar();
+      //..........................
+
+      if ( btnhit() || (key >-1) ) {
+          for (i=0; i<400; i++)
+           SoundPattern[i][key+1]=SoundPattern[i][0];
+         printf1(1, LCDline[7], "stored rec. Btn%d", key+1 );
+      }
+
+      //////////////////////////////////////////
+      //  compare and recognize sound record  //
+      //////////////////////////////////////////
+      sum_min=LONG_MAX; j_best=INT_MAX;
+      str=".";
+      for (j=1; j<5; j++) {
+        TextOut(0, LCDline[1], str);
+        sum[j]=0;
+        if (SoundPattern[0][j]>10) {
+          for (i=1; i < 400; i++) {
+            d2=(SoundPattern[i][0]-SoundPattern[i][j]);
+            d2=d2*d2;
+            sum[j]=sum[j] + d2;
+          }
+        }
+        else {
+          sum[j]=LONG_MAX;
+        }
+        buf=sum[j];
+        // printf1(1, LCDline[1], "sum=%6d", buf);
+        if (sum[j]<sum_min) {
+          sum_min=sum[j];
+          j_best=j;
+          // printf1(1, LCDline[2], "min=%5d", sum_min );
+        }
+        str+=".";
+      } // for j
+
+      if (j_best< INT_MAX)
+        printf1(1, LCDline[3], "recogn=Btn%d", j_best );
+    }
+
+  } // while
+} // SoundCheck
+
+task main(){
+
+  SetLongAbort(true);
+  SetSensorType(1, SENSOR_TYPE_SOUND_DBA);
+  SetSensorMode(1, SENSOR_MODE_RAW);
+
+  Wait(400);
+  BGrndNoise=SensorValue(S2)+18;
+
+  StartTask(SoundCheck);
+  while (true)  {
+
+
+  }
+}
+
+
