@@ -1,0 +1,983 @@
+#SYMBOLS
+Index	Identifier	Type	Flag	Data	Size	RefCount
+0	__signed_stack_002countNeighbours	6	1	0	4	2
+1	__signed_stack_001countNeighbours	6	1	4	4	12
+2	__signed_stack_001drawBoard	6	1	8	4	28
+3	__signed_stack_001main	6	1	12	4	6
+4	__signed_stack_002drawBoard	6	1	16	4	8
+5	__signed_stack_004calculateGeneration	6	1	20	4	2
+6	__D0fillRect_inline_drawBoard	6	1	24	4	3
+7	__D0Put_GospersGliderGun	6	1	28	4	20
+8	__signed_stack_001calculateGeneration	6	1	32	4	30
+9	__signed_stack_003calculateGeneration	6	1	36	4	2
+10	__signed_stack_002calculateGeneration	6	1	40	4	14
+11	__signed_stack_001fillRect_inline_drawBoard	6	1	44	4	2
+12	__signed_stack_004Put_GospersGliderGun	6	1	48	4	2
+13	__signed_stack_002fillRect_inline_drawBoard	6	1	52	4	2
+14	__signed_stack_004fillRect_inline_drawBoard	6	1	56	4	2
+15	__signed_stack_003fillRect_inline_drawBoard	6	1	60	4	2
+16	__signed_stack_003Put_GospersGliderGun	6	1	64	4	4
+17	__unsigned_stack_001main	5	1	68	4	6
+18	__signed_stack_002main	6	1	72	4	6
+19	__unsigned_stack_003main	5	1	76	4	2
+20	__signed_stack_002Put_GospersGliderGun	6	1	80	4	10
+21	__signed_stack_001Put_GospersGliderGun	6	1	84	4	9
+22	__DU0main	5	1	88	4	2
+23	__Wait_7qG2_ms_7qG2_000_inline_main	5	1	92	4	2
+24	__main_7qG2_stime_7qG2_000	5	1	96	4	5
+25	__PointOutMutex	9	0	100	4	2
+26	__main_7qG2_g_7qG2_000	5	1	104	4	5
+27	__TextOutMutex	9	0	108	4	6
+28	__constVal786433	6	0	112	4	1
+29	__D0drawBoard	6	1	116	4	40
+30	__D0main	6	1	120	4	20
+31	__D0countNeighbours	6	1	124	4	23
+32	__RandomExMutex	9	0	128	4	2
+33	__D0calculateGeneration	6	1	132	4	44
+34	__Put_GospersGliderGun_7qG2_y_7qG2_000	4	1	136	2	6
+35	__countNeighbours_7qG2_ry_7qG2_000	4	1	138	2	2
+36	__countNeighbours_7qG2_cx_7qG2_000	4	1	140	2	2
+37	__countNeighbours_7qG2_x_7qG2_001	4	1	142	2	6
+38	__countNeighbours_7qG2_count_7qG2_000	4	1	144	2	4
+39	__calculateGeneration_7qG2_cx_7qG2_003	4	1	146	2	11
+40	__drawBoard_7qG2_ry_7qG2_001	4	1	148	2	7
+41	__calculateGeneration_7qG2_ry_7qG2_001	4	1	150	2	11
+42	__countNeighbours_7qG2_y_7qG2_003	4	1	152	2	6
+43	__calculateGeneration_7qG2_aliveNeighbours_7qG2_000	4	1	154	2	6
+44	__drawBoard_7qG2_cx_7qG2_003	4	1	156	2	7
+45	__fillRect_7qG2_y2_7qG2_000_inline_drawBoard	4	1	158	2	2
+46	__Put_GospersGliderGun_7qG2_x_7qG2_000	4	1	160	2	6
+47	__fillRect_7qG2_x2_7qG2_000_inline_drawBoard	4	1	162	2	2
+48	__fillRect_7qG2_x1_7qG2_000_inline_drawBoard	4	1	164	2	3
+49	__fillRect_7qG2_y1_7qG2_000_inline_drawBoard	4	1	166	2	3
+50	maxy	4	0	168	2	7
+51	maxx	4	0	170	2	6
+52	__constVal200	4	0	172	2	2
+53	__Put_GospersGliderGun_return	1	1	174	1	3
+54	__drawBoard_return	1	1	175	1	4
+55	____initialize_global_data_return	1	1	176	1	3
+56	__initBoard_return	1	1	177	1	3
+57	__calculateGeneration_return	1	1	178	1	3
+58	__constVal33	2	0	179	1	1
+59	__constVal1	2	0	180	1	11
+60	__countNeighbours_return	1	1	181	1	4
+61	__constVal0	2	1	182	1	9
+62	__constValNeg1	2	0	183	1	2
+63	__RandomExArgs	8	0	2	8	5
+64	__RandomExArgs.Seed	5	1	184	4	5
+65	__RandomExArgs.ReSeed	1	1	188	1	5
+66	__TextOutArgs	8	0	4	16	18
+67	__TextOutArgs.Result	2	1	192	1	18
+68	__TextOutArgs.Location	8	0	2	4	18
+69	__TextOutArgs.Location.X	4	1	196	2	18
+70	__TextOutArgs.Location.Y	4	1	198	2	18
+71	__TextOutArgs.Text	7	0	200	4	18
+72	__TextOutArgs.Text.Text_type	1	0	0	1	0
+73	__TextOutArgs.Options	5	1	204	4	18
+74	__PointOutArgs	8	0	3	12	4
+75	__PointOutArgs.Result	2	1	208	1	4
+76	__PointOutArgs.Location	8	0	2	4	4
+77	__PointOutArgs.Location.X	4	1	212	2	4
+78	__PointOutArgs.Location.Y	4	1	214	2	4
+79	__PointOutArgs.Options	5	1	216	4	4
+80	__RectOutArgs	8	0	4	16	7
+81	__RectOutArgs.Result	2	1	220	1	7
+82	__RectOutArgs.Location	8	0	2	4	7
+83	__RectOutArgs.Location.X	4	1	224	2	7
+84	__RectOutArgs.Location.Y	4	1	226	2	7
+85	__RectOutArgs.Size	8	0	2	4	7
+86	__RectOutArgs.Size.Width	4	1	228	2	7
+87	__RectOutArgs.Size.Height	4	1	230	2	7
+88	__RectOutArgs.Options	5	1	232	4	7
+89	__IOMWBIArgs	8	0	4	16	4
+90	__IOMWBIArgs.Result	2	1	236	1	4
+91	__IOMWBIArgs.ModuleID	5	1	240	4	4
+92	__IOMWBIArgs.Offset	3	1	244	2	4
+93	__IOMWBIArgs.Buffer	7	0	246	4	4
+94	__IOMWBIArgs.Buffer.Buffer_type	1	0	0	1	0
+95	__ArrHelper__Put_GospersGliderGun_232_0	7	0	248	4	4
+96	__ArrHelper__Put_GospersGliderGun_232_0.__ArrHelper__Put_GospersGliderGun_232_0_type	2	0	0	1	0
+97	__calculateGeneration_7qG2_tmp_7qG2_000	7	0	250	4	3
+98	__calculateGeneration_7qG2_tmp_7qG2_000.__calculateGeneration_7qG2_tmp_7qG2_000_type	4	0	0	2	0
+99	__ArrHelper__Put_GospersGliderGun_232_1	7	0	252	4	2
+100	__ArrHelper__Put_GospersGliderGun_232_1.__ArrHelper__Put_GospersGliderGun_232_1_type	2	0	0	1	0
+101	__constStr0020	7	0	254	4	1
+102	__constStr0020.__constStr0020_type	2	1	0	1	0
+103	__ArrHelper__drawBoard_232_0	7	0	256	4	2
+104	__ArrHelper__drawBoard_232_0.__ArrHelper__drawBoard_232_0_type	2	0	0	1	0
+105	__initBoard_7qG2_temp_7qG2_000	7	0	258	4	3
+106	__initBoard_7qG2_temp_7qG2_000.__initBoard_7qG2_temp_7qG2_000_type	4	0	0	2	0
+107	__constStr0022	7	0	260	4	1
+108	__constStr0022.__constStr0022_type	1	1	0	1	0
+109	__board_2	7	0	262	4	2
+110	__board_2.__board_2_type	2	0	0	1	0
+111	__tmpboard_2	7	0	264	4	2
+112	__tmpboard_2.__tmpboard_2_type	2	0	0	1	0
+113	__strbufmain	7	0	266	4	2
+114	__strbufmain.__strbufmain_type	1	0	0	1	0
+115	board	7	0	268	4	10
+116	board.board_type	7	0	0	4	0
+117	board.board_type.board_type_type	2	0	0	1	0
+118	tmpboard	7	0	270	4	15
+119	tmpboard.tmpboard_type	7	0	0	4	0
+120	tmpboard.tmpboard_type.tmpboard_type_type	2	0	0	1	0
+121	__constStr0019	7	0	272	4	1
+122	__constStr0019.__constStr0019_type	2	1	0	1	0
+123	__ArrHelper__calculateGeneration_232_1	7	0	274	4	2
+124	__ArrHelper__calculateGeneration_232_1.__ArrHelper__calculateGeneration_232_1_type	2	0	0	1	0
+125	__Put_GospersGliderGun_7qG2_sprite_7qG2_000	7	0	276	4	2
+126	__Put_GospersGliderGun_7qG2_sprite_7qG2_000.__Put_GospersGliderGun_7qG2_sprite_7qG2_000_type	7	0	0	4	0
+127	__Put_GospersGliderGun_7qG2_sprite_7qG2_000.__Put_GospersGliderGun_7qG2_sprite_7qG2_000_type.__Put_GospersGliderGun_7qG2_sprite_7qG2_000_type_type	2	0	0	1	0
+128	__constStr0012	7	0	278	4	1
+129	__constStr0012.__constStr0012_type	2	1	0	1	0
+130	__IOMWFlattenBuf	7	0	280	4	2
+131	__IOMWFlattenBuf.__IOMWFlattenBuf_type	1	0	0	1	0
+132	__ArrHelper__countNeighbours_232_0	7	0	282	4	2
+133	__ArrHelper__countNeighbours_232_0.__ArrHelper__countNeighbours_232_0_type	2	0	0	1	0
+134	__ArrHelper__calculateGeneration_232_0	7	0	284	4	18
+135	__ArrHelper__calculateGeneration_232_0.__ArrHelper__calculateGeneration_232_0_type	2	0	0	1	0
+136	__constStr0016	7	0	286	4	1
+137	__constStr0016.__constStr0016_type	2	1	0	1	0
+138	__constStr0017	7	0	288	4	1
+139	__constStr0017.__constStr0017_type	2	1	0	1	0
+140	__constStr0018	7	0	290	4	1
+141	__constStr0018.__constStr0018_type	2	1	0	1	0
+142	__constStr0013	7	0	292	4	1
+143	__constStr0013.__constStr0013_type	2	1	0	1	0
+144	__constStr0014	7	0	294	4	1
+145	__constStr0014.__constStr0014_type	2	1	0	1	0
+146	__constStr0015	7	0	296	4	1
+147	__constStr0015.__constStr0015_type	2	1	0	1	0
+#SOURCES
+Clump	Line	PC	Source
+0	277	0	#line 277 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	278	0		subcall __initialize_global_data, ____initialize_global_data_return
+0	277	2	#line 277 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	279	2	#line 279 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	280	2	#pragma macro 8
+0	280	2		mov __IOMWBIArgs.ModuleID, __constVal786433
+0	280	4		mov __IOMWBIArgs.Offset, __constVal33
+0	280	6		flatten __IOMWFlattenBuf, __constVal0
+0	280	9		strtoarr __IOMWBIArgs.Buffer, __IOMWFlattenBuf
+0	280	12		syscall 79, __IOMWBIArgs
+0	9249	15	#line 9249 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	279	15	#line 279 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	279	15	#line 279 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	282	15	#line 282 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	283	15		gettick __main_7qG2_stime_7qG2_000
+0	282	17	#line 282 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	282	17	#line 282 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	282	17	#line 282 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	283	17	#line 283 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	284	17	#pragma macro 7
+0	284	17		acquire __RandomExMutex
+0	284	18		set __RandomExArgs.ReSeed, 1
+0	284	21		mov __RandomExArgs.Seed, __main_7qG2_stime_7qG2_000
+0	284	23		syscall 99, __RandomExArgs
+0	284	26		set __RandomExArgs.ReSeed, 0
+0	284	29		mov __D0main, __RandomExArgs.Seed
+0	284	31		release __RandomExMutex
+0	9261	32	#line 9261 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	283	32	#line 283 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	283	32	#line 283 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	285	32	#line 285 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	286	32		subcall initBoard, __initBoard_return
+0	285	34	#line 285 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	286	34	#line 286 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	287	34		subcall drawBoard, __drawBoard_return
+0	286	36	#line 286 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	287	36	#line 287 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	288	36		set __Wait_7qG2_ms_7qG2_000_inline_main, 1
+0	287	39	#line 287 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	8869	39	#line 8869 "NXCDefs.h"
+0	8870	39		waitv __Wait_7qG2_ms_7qG2_000_inline_main
+0	8869	41	#line 8869 "NXCDefs.h"
+0	287	41	#line 287 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	290	41	#line 290 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	291	41		set __D0main, 1
+0	291	44	#line 291 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	292	44		tst 5, __D0main, __D0main
+0	291	47	#line 291 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	292	47		brtst 4, __ASM_Label_937, __D0main
+0	291	50	#line 291 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	292	50		subcall calculateGeneration, __calculateGeneration_return
+0	291	52	#line 291 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	292	52	#line 292 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	293	52		subcall drawBoard, __drawBoard_return
+0	292	54	#line 292 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	293	54	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	54		set __signed_stack_001main, 0
+0	293	57	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	293	57	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	57		set __signed_stack_002main, 0
+0	293	60	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	293	60	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	60		add __main_7qG2_g_7qG2_000, __main_7qG2_g_7qG2_000, __constVal1
+0	293	64	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	64		mov __DU0main, __main_7qG2_g_7qG2_000
+0	293	66	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	66		acquire __TextOutMutex
+0	293	67	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	67		mov __TextOutArgs.Location.X, __signed_stack_001main
+0	293	69	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	69		mov __TextOutArgs.Location.Y, __signed_stack_002main
+0	293	71	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	71		set __TextOutArgs.Options, 0
+0	293	74	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	74		numtostr __TextOutArgs.Text, __DU0main
+0	293	77	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	77		syscall 13, __TextOutArgs
+0	293	80	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	80		mov __D0main, __TextOutArgs.Result
+0	293	82	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	82		release __TextOutMutex
+0	293	83	#line 293 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	83	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	83		mov __unsigned_stack_001main, __main_7qG2_g_7qG2_000
+0	294	85	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	85	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	85		set __D0main, 100
+0	294	88	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	88		cmp 4, __D0main, __unsigned_stack_001main, __D0main
+0	294	92	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	92		brtst 4, __ASM_Label_948, __D0main
+0	294	95	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	95		gettick __unsigned_stack_001main
+0	294	97	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	97	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	97	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	97		sub __main_7qG2_stime_7qG2_000, __unsigned_stack_001main, __main_7qG2_stime_7qG2_000
+0	294	101	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	101	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	101	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	294	101	#line 294 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	101	#line 295 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	101		mov __unsigned_stack_001main, __main_7qG2_g_7qG2_000
+0	295	103	#line 295 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	295	103	#line 295 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	103		set __D0main, 100
+0	295	106	#line 295 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	106		cmp 3, __D0main, __unsigned_stack_001main, __D0main
+0	296	110	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	110		brtst 4, __ASM_Label_955, __D0main
+0	296	113	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	113		set __signed_stack_001main, 30
+0	296	116	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	116	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	116		set __signed_stack_002main, 0
+0	296	119	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	119	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	119		strcat __strbufmain, __constStr0022
+0	296	123	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	123		acquire __TextOutMutex
+0	296	124	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	124		mov __TextOutArgs.Location.X, __signed_stack_001main
+0	296	126	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	126		mov __TextOutArgs.Location.Y, __signed_stack_002main
+0	296	128	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	128		set __TextOutArgs.Options, 0
+0	296	131	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	131		mov __TextOutArgs.Text, __strbufmain
+0	296	133	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	133		syscall 13, __TextOutArgs
+0	296	136	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	136		mov __D0main, __TextOutArgs.Result
+0	296	138	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	138		release __TextOutMutex
+0	296	139	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	139	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	139		set __signed_stack_001main, 78
+0	296	142	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	142	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	142		set __signed_stack_002main, 0
+0	296	145	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	145	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	145		mov __unsigned_stack_003main, __main_7qG2_stime_7qG2_000
+0	296	147	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	296	147	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	147		set __D0main, 1000
+0	296	150	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	150		div __D0main, __unsigned_stack_003main, __D0main
+0	296	154	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	154		acquire __TextOutMutex
+0	296	155	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	155		mov __TextOutArgs.Location.X, __signed_stack_001main
+0	296	157	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	157		mov __TextOutArgs.Location.Y, __signed_stack_002main
+0	296	159	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	159		set __TextOutArgs.Options, 0
+0	296	162	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	162		numtostr __TextOutArgs.Text, __D0main
+0	296	165	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	165		syscall 13, __TextOutArgs
+0	296	168	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	168		mov __D0main, __TextOutArgs.Result
+0	296	170	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	297	170		release __TextOutMutex
+0	296	171	#line 296 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	299	171	#line 299 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	301	171	#line 301 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	302	171		jmp __ASM_Label_936
+0	301	173	#line 301 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+0	302	173		exit -1, -1
+1	75	0	#line 75 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	76	0		set __countNeighbours_7qG2_count_7qG2_000, 0
+1	75	3	#line 75 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	76	3	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	77	3		mov __countNeighbours_7qG2_x_7qG2_001, __constValNeg1
+1	76	5	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	76	5	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	77	5		mov __signed_stack_001countNeighbours, __countNeighbours_7qG2_x_7qG2_001
+1	76	7	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	76	7	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	77	7		set __D0countNeighbours, 1
+1	76	10	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	77	10		cmp 2, __D0countNeighbours, __signed_stack_001countNeighbours, __D0countNeighbours
+1	76	14	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	77	14		brtst 4, __ASM_Label_654, __D0countNeighbours
+1	76	17	#line 76 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	77	17		jmp __ASM_Label_655
+1	77	19	#line 77 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	78	19		add __countNeighbours_7qG2_x_7qG2_001, __countNeighbours_7qG2_x_7qG2_001, __constVal1
+1	78	23	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	23		jmp __ASM_Label_653
+1	78	25	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	25		mov __countNeighbours_7qG2_y_7qG2_003, __constValNeg1
+1	78	27	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	78	27	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	27		mov __signed_stack_001countNeighbours, __countNeighbours_7qG2_y_7qG2_003
+1	78	29	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	78	29	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	29		set __D0countNeighbours, 1
+1	78	32	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	32		cmp 2, __D0countNeighbours, __signed_stack_001countNeighbours, __D0countNeighbours
+1	78	36	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	36		brtst 4, __ASM_Label_662, __D0countNeighbours
+1	78	39	#line 78 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	79	39		jmp __ASM_Label_663
+1	79	41	#line 79 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	41		add __countNeighbours_7qG2_y_7qG2_003, __countNeighbours_7qG2_y_7qG2_003, __constVal1
+1	80	45	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	45		jmp __ASM_Label_661
+1	80	47	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	47	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	47	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	47	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	47		add __signed_stack_001countNeighbours, __countNeighbours_7qG2_cx_7qG2_000, __countNeighbours_7qG2_x_7qG2_001
+1	80	51	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	51	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	51		index __ArrHelper__countNeighbours_232_0, board, __signed_stack_001countNeighbours
+1	80	55	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	55	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	55	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	55	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	55		add __signed_stack_002countNeighbours, __countNeighbours_7qG2_ry_7qG2_000, __countNeighbours_7qG2_y_7qG2_003
+1	80	59	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	59	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	59		index __signed_stack_001countNeighbours, __ArrHelper__countNeighbours_232_0, __signed_stack_002countNeighbours
+1	80	63	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	63	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	63	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	63		set __D0countNeighbours, 1
+1	80	66	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	66		cmp 4, __D0countNeighbours, __signed_stack_001countNeighbours, __D0countNeighbours
+1	80	70	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	70		brtst 4, __ASM_Label_670, __D0countNeighbours
+1	80	73	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	73		mov __signed_stack_001countNeighbours, __countNeighbours_7qG2_x_7qG2_001
+1	80	75	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	75	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	75		set __D0countNeighbours, 0
+1	80	78	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	78		cmp 5, __D0countNeighbours, __signed_stack_001countNeighbours, __D0countNeighbours
+1	80	82	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	82		brtst 5, __ASM_Label_677, __D0countNeighbours
+1	80	85	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	85		mov __signed_stack_001countNeighbours, __countNeighbours_7qG2_y_7qG2_003
+1	80	87	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	80	87	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	87		set __D0countNeighbours, 0
+1	80	90	#line 80 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	81	90		cmp 5, __D0countNeighbours, __signed_stack_001countNeighbours, __D0countNeighbours
+1	81	94	#line 81 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	82	94		brtst 4, __ASM_Label_680, __D0countNeighbours
+1	81	97	#line 81 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	82	97		add __countNeighbours_7qG2_count_7qG2_000, __countNeighbours_7qG2_count_7qG2_000, __constVal1
+1	81	101	#line 81 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	83	101	#line 83 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	84	101	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	85	101		jmp __ASM_Label_664
+1	84	103	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	84	103	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	85	103		jmp __ASM_Label_656
+1	84	105	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	84	105	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	85	105		mov __D0countNeighbours, __countNeighbours_7qG2_count_7qG2_000
+1	84	107	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	85	107		subret __countNeighbours_return
+1	84	109	#line 84 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	93	109	#line 93 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+1	94	109		subret __countNeighbours_return
+2	95	0	#line 95 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	96	0		set __calculateGeneration_7qG2_aliveNeighbours_7qG2_000, 0
+2	95	3	#line 95 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	3	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	3	#pragma macro 5
+2	100	3	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	3		arrinit __calculateGeneration_7qG2_tmp_7qG2_000, __constVal0, maxy
+2	100	7	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	7	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	7	#line 101 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	102	7		arrinit tmpboard, __calculateGeneration_7qG2_tmp_7qG2_000, maxx
+2	101	11	#line 101 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	11	#line 101 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	102	11	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	11		arrinit __calculateGeneration_7qG2_tmp_7qG2_000, __constVal0, __constVal0
+2	102	15	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	102	15	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	98	15	#line 98 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	98	15	#line 98 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	98	15	#line 98 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	15	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	99	15	#line 99 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	15	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	15		set __calculateGeneration_7qG2_ry_7qG2_001, 1
+2	100	18	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	18	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	18		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	100	20	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	20	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	20		mov __signed_stack_002calculateGeneration, maxy
+2	100	22	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	100	22	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	22		set __D0calculateGeneration, 1
+2	100	25	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	25		sub __D0calculateGeneration, __signed_stack_002calculateGeneration, __D0calculateGeneration
+2	100	29	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	29		cmp 0, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	100	33	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	33		brtst 4, __ASM_Label_686, __D0calculateGeneration
+2	100	36	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	36		jmp __ASM_Label_687
+2	100	38	#line 100 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	101	38		add __calculateGeneration_7qG2_ry_7qG2_001, __calculateGeneration_7qG2_ry_7qG2_001, __constVal1
+2	102	42	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	42		jmp __ASM_Label_685
+2	102	44	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	44		set __calculateGeneration_7qG2_cx_7qG2_003, 1
+2	102	47	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	102	47	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	47		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	102	49	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	102	49	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	49		mov __signed_stack_002calculateGeneration, maxx
+2	102	51	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	102	51	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	51		set __D0calculateGeneration, 1
+2	102	54	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	54		sub __D0calculateGeneration, __signed_stack_002calculateGeneration, __D0calculateGeneration
+2	102	58	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	58		cmp 0, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	102	62	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	62		brtst 4, __ASM_Label_696, __D0calculateGeneration
+2	102	65	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	65		jmp __ASM_Label_697
+2	102	67	#line 102 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	103	67		add __calculateGeneration_7qG2_cx_7qG2_003, __calculateGeneration_7qG2_cx_7qG2_003, __constVal1
+2	104	71	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	105	71		jmp __ASM_Label_695
+2	104	73	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	105	73		mov __countNeighbours_7qG2_cx_7qG2_000, __calculateGeneration_7qG2_cx_7qG2_003
+2	104	75	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	104	75	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	105	75		mov __countNeighbours_7qG2_ry_7qG2_000, __calculateGeneration_7qG2_ry_7qG2_001
+2	104	77	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	104	77	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	105	77		subcall countNeighbours, __countNeighbours_return
+2	104	79	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	105	79		mov __calculateGeneration_7qG2_aliveNeighbours_7qG2_000, __D0countNeighbours
+2	104	81	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	104	81	#line 104 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	108	81	#line 108 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	109	81		mov __signed_stack_001calculateGeneration, __D0countNeighbours
+2	108	83	#line 108 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	109	83	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	83		set __D0calculateGeneration, 2
+2	109	86	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	86		cmp 0, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	109	90	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	90		brtst 4, __ASM_Label_713, __D0calculateGeneration
+2	109	93	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	93		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	109	95	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	109	95	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	95		index __ArrHelper__calculateGeneration_232_0, tmpboard, __signed_stack_001calculateGeneration
+2	109	99	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	99		mov __signed_stack_002calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	109	101	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	109	101	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	101		set __D0calculateGeneration, 0
+2	109	104	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	104		replace __ArrHelper__calculateGeneration_232_0, __ArrHelper__calculateGeneration_232_0, __signed_stack_002calculateGeneration, __D0calculateGeneration
+2	109	109	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	110	109		replace tmpboard, tmpboard, __signed_stack_001calculateGeneration, __ArrHelper__calculateGeneration_232_0
+2	109	114	#line 109 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	112	114	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	112	114	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	114		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_aliveNeighbours_7qG2_000
+2	112	116	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	112	116	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	116		set __D0calculateGeneration, 2
+2	112	119	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	119		cmp 3, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	112	123	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	123		brtst 4, __ASM_Label_721, __D0calculateGeneration
+2	112	126	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	126		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_aliveNeighbours_7qG2_000
+2	112	128	#line 112 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	128	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	128		set __D0calculateGeneration, 3
+2	113	131	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	131		cmp 2, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	113	135	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	135		brtst 4, __ASM_Label_722, __D0calculateGeneration
+2	113	138	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	138		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	113	140	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	140	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	140		index __ArrHelper__calculateGeneration_232_0, tmpboard, __signed_stack_001calculateGeneration
+2	113	144	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	144		mov __signed_stack_002calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	113	146	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	146	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	146		mov __signed_stack_003calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	113	148	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	148	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	148		index __ArrHelper__calculateGeneration_232_1, board, __signed_stack_003calculateGeneration
+2	113	152	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	152		mov __signed_stack_004calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	113	154	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	154	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	154		index __D0calculateGeneration, __ArrHelper__calculateGeneration_232_1, __signed_stack_004calculateGeneration
+2	113	158	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	113	158	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	158		replace __ArrHelper__calculateGeneration_232_0, __ArrHelper__calculateGeneration_232_0, __signed_stack_002calculateGeneration, __D0calculateGeneration
+2	113	163	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	114	163		replace tmpboard, tmpboard, __signed_stack_001calculateGeneration, __ArrHelper__calculateGeneration_232_0
+2	113	168	#line 113 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	116	168	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	116	168	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	168		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_aliveNeighbours_7qG2_000
+2	116	170	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	116	170	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	170		set __D0calculateGeneration, 3
+2	116	173	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	173		cmp 4, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	116	177	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	177		brtst 4, __ASM_Label_734, __D0calculateGeneration
+2	116	180	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	180		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	116	182	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	116	182	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	182		index __ArrHelper__calculateGeneration_232_0, board, __signed_stack_001calculateGeneration
+2	116	186	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	186		mov __signed_stack_002calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	116	188	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	116	188	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	188		index __signed_stack_001calculateGeneration, __ArrHelper__calculateGeneration_232_0, __signed_stack_002calculateGeneration
+2	116	192	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	116	192	#line 116 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	192	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	192		set __D0calculateGeneration, 0
+2	117	195	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	195		cmp 4, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	117	199	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	199		brtst 4, __ASM_Label_739, __D0calculateGeneration
+2	117	202	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	202		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	117	204	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	204	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	204		index __ArrHelper__calculateGeneration_232_0, tmpboard, __signed_stack_001calculateGeneration
+2	117	208	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	208		mov __signed_stack_002calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	117	210	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	117	210	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	210		set __D0calculateGeneration, 1
+2	117	213	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	213		replace __ArrHelper__calculateGeneration_232_0, __ArrHelper__calculateGeneration_232_0, __signed_stack_002calculateGeneration, __D0calculateGeneration
+2	117	218	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	118	218		replace tmpboard, tmpboard, __signed_stack_001calculateGeneration, __ArrHelper__calculateGeneration_232_0
+2	117	223	#line 117 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	120	223	#line 120 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	120	223	#line 120 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	121	223		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_aliveNeighbours_7qG2_000
+2	120	225	#line 120 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	121	225	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	225		set __D0calculateGeneration, 3
+2	121	228	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	228		cmp 1, __D0calculateGeneration, __signed_stack_001calculateGeneration, __D0calculateGeneration
+2	121	232	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	232		brtst 4, __ASM_Label_748, __D0calculateGeneration
+2	121	235	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	235		mov __signed_stack_001calculateGeneration, __calculateGeneration_7qG2_cx_7qG2_003
+2	121	237	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	121	237	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	237		index __ArrHelper__calculateGeneration_232_0, tmpboard, __signed_stack_001calculateGeneration
+2	121	241	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	241		mov __signed_stack_002calculateGeneration, __calculateGeneration_7qG2_ry_7qG2_001
+2	121	243	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	121	243	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	243		set __D0calculateGeneration, 0
+2	121	246	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	246		replace __ArrHelper__calculateGeneration_232_0, __ArrHelper__calculateGeneration_232_0, __signed_stack_002calculateGeneration, __D0calculateGeneration
+2	121	251	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	122	251		replace tmpboard, tmpboard, __signed_stack_001calculateGeneration, __ArrHelper__calculateGeneration_232_0
+2	121	256	#line 121 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	123	256	#line 123 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	125	256	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	126	256		jmp __ASM_Label_698
+2	125	258	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	125	258	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	126	258		jmp __ASM_Label_688
+2	125	260	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	125	260	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	126	260		mov board, tmpboard
+2	125	262	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	125	262	#line 125 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	133	262	#line 133 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+2	134	262		subret __calculateGeneration_return
+3	6921	0	#line 6921 "NXCDefs.h"
+3	6922	0	#pragma macro 6
+3	6922	0		acquire __PointOutMutex
+3	6922	1		mov __PointOutArgs.Location.X, __constVal200
+3	6922	3		mov __PointOutArgs.Location.Y, __constVal200
+3	6922	5		mov __PointOutArgs.Options, __constVal1
+3	6922	7		syscall 14, __PointOutArgs
+3	6922	10		release __PointOutMutex
+3	7849	11	#line 7849 "NXCDefs.h"
+3	6921	11	#line 6921 "NXCDefs.h"
+3	135	11	#line 135 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	137	11	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	11		set __drawBoard_7qG2_ry_7qG2_001, 0
+3	137	14	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	137	14	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	14		mov __signed_stack_001drawBoard, __drawBoard_7qG2_ry_7qG2_001
+3	137	16	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	137	16	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	16		mov __signed_stack_002drawBoard, maxy
+3	137	18	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	137	18	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	18		set __D0drawBoard, 2
+3	137	21	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	21		sub __D0drawBoard, __signed_stack_002drawBoard, __D0drawBoard
+3	137	25	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	25		cmp 0, __D0drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	137	29	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	29		brtst 4, __ASM_Label_756, __D0drawBoard
+3	137	32	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	32		jmp __ASM_Label_757
+3	137	34	#line 137 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	34		add __drawBoard_7qG2_ry_7qG2_001, __drawBoard_7qG2_ry_7qG2_001, __constVal1
+3	138	38	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	38		jmp __ASM_Label_755
+3	138	40	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	40		set __drawBoard_7qG2_cx_7qG2_003, 0
+3	138	43	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	43	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	43		mov __signed_stack_001drawBoard, __drawBoard_7qG2_cx_7qG2_003
+3	138	45	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	45	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	45		mov __signed_stack_002drawBoard, maxx
+3	138	47	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	138	47	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	47		set __D0drawBoard, 2
+3	138	50	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	50		sub __D0drawBoard, __signed_stack_002drawBoard, __D0drawBoard
+3	138	54	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	54		cmp 0, __D0drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	138	58	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	58		brtst 4, __ASM_Label_766, __D0drawBoard
+3	138	61	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	61		jmp __ASM_Label_767
+3	138	63	#line 138 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	139	63		add __drawBoard_7qG2_cx_7qG2_003, __drawBoard_7qG2_cx_7qG2_003, __constVal1
+3	140	67	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	67		jmp __ASM_Label_765
+3	140	69	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	69		mov __signed_stack_001drawBoard, __drawBoard_7qG2_cx_7qG2_003
+3	140	71	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	140	71	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	71		set __D0drawBoard, 1
+3	140	74	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	74		add __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	140	78	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	140	78	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	78		index __ArrHelper__drawBoard_232_0, board, __signed_stack_001drawBoard
+3	140	82	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	82		mov __signed_stack_002drawBoard, __drawBoard_7qG2_ry_7qG2_001
+3	140	84	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	140	84	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	84		set __D0drawBoard, 1
+3	140	87	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	87		add __signed_stack_002drawBoard, __signed_stack_002drawBoard, __D0drawBoard
+3	140	91	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	140	91	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	141	91		index __D0drawBoard, __ArrHelper__drawBoard_232_0, __signed_stack_002drawBoard
+3	140	95	#line 140 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	142	95	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	95		tst 5, __D0drawBoard, __D0drawBoard
+3	142	98	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	98		brtst 4, __ASM_Label_781, __D0drawBoard
+3	142	101	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	101		mov __signed_stack_001drawBoard, __drawBoard_7qG2_cx_7qG2_003
+3	142	103	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	142	103	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	103		set __D0drawBoard, 2
+3	142	106	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	106		mul __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	142	110	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	142	110	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	110		set __D0drawBoard, 5
+3	142	113	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	113		add __fillRect_7qG2_x1_7qG2_000_inline_drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	142	117	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	142	117	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	117		mov __signed_stack_001drawBoard, __drawBoard_7qG2_ry_7qG2_001
+3	142	119	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	142	119	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	119		set __D0drawBoard, 2
+3	142	122	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	122		mul __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	142	126	#line 142 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	126	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	126		set __D0drawBoard, 5
+3	143	129	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	129		add __fillRect_7qG2_y1_7qG2_000_inline_drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	133	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	133	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	133		mov __signed_stack_001drawBoard, __drawBoard_7qG2_cx_7qG2_003
+3	143	135	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	135	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	135		set __D0drawBoard, 2
+3	143	138	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	138		mul __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	142	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	142	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	142		set __D0drawBoard, 2
+3	143	145	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	145		add __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	149	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	149	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	149		set __D0drawBoard, 5
+3	143	152	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	152		add __fillRect_7qG2_x2_7qG2_000_inline_drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	156	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	156	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	156		mov __signed_stack_001drawBoard, __drawBoard_7qG2_ry_7qG2_001
+3	143	158	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	158	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	158		set __D0drawBoard, 2
+3	143	161	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	161		mul __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	165	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	165	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	165		set __D0drawBoard, 2
+3	143	168	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	168		add __signed_stack_001drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	172	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	172	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	172		set __D0drawBoard, 5
+3	143	175	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	144	175		add __fillRect_7qG2_y2_7qG2_000_inline_drawBoard, __signed_stack_001drawBoard, __D0drawBoard
+3	143	179	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	179	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	179		mov __signed_stack_001fillRect_inline_drawBoard, __fillRect_7qG2_x1_7qG2_000_inline_drawBoard
+3	54	181	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	181	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	181		mov __signed_stack_002fillRect_inline_drawBoard, __fillRect_7qG2_y1_7qG2_000_inline_drawBoard
+3	54	183	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	183	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	183	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	183	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	183	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	183		sub __signed_stack_003fillRect_inline_drawBoard, __fillRect_7qG2_x2_7qG2_000_inline_drawBoard, __fillRect_7qG2_x1_7qG2_000_inline_drawBoard
+3	54	187	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	187	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	187	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	187	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	187	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	187		sub __signed_stack_004fillRect_inline_drawBoard, __fillRect_7qG2_y2_7qG2_000_inline_drawBoard, __fillRect_7qG2_y1_7qG2_000_inline_drawBoard
+3	54	191	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	191	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	191		set __D0fillRect_inline_drawBoard, 32
+3	54	194	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	194	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	194		mov __RectOutArgs.Location.X, __signed_stack_001fillRect_inline_drawBoard
+3	54	196	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	196		mov __RectOutArgs.Location.Y, __signed_stack_002fillRect_inline_drawBoard
+3	54	198	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	198		mov __RectOutArgs.Size.Width, __signed_stack_003fillRect_inline_drawBoard
+3	54	200	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	200		mov __RectOutArgs.Size.Height, __signed_stack_004fillRect_inline_drawBoard
+3	54	202	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	202		mov __RectOutArgs.Options, __D0fillRect_inline_drawBoard
+3	54	204	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	204		syscall 17, __RectOutArgs
+3	54	207	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	55	207		mov __D0fillRect_inline_drawBoard, __RectOutArgs.Result
+3	54	209	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	54	209	#line 54 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	143	209	#line 143 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	145	209	#line 145 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	146	209	#line 146 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	147	209		jmp __ASM_Label_768
+3	146	211	#line 146 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	152	211	#line 152 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	153	211		jmp __ASM_Label_758
+3	152	213	#line 152 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	152	213	#line 152 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+3	153	213		subret __drawBoard_return
+4	213	0	#line 213 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	214	0		arrbuild __Put_GospersGliderGun_7qG2_sprite_7qG2_000, __constStr0012, __constStr0013, __constStr0014, __constStr0015, __constStr0016, __constStr0017, __constStr0018, __constStr0019, __constStr0020
+4	215	12	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	12		set __Put_GospersGliderGun_7qG2_x_7qG2_000, 0
+4	215	15	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	215	15	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	15		mov __signed_stack_001Put_GospersGliderGun, __Put_GospersGliderGun_7qG2_x_7qG2_000
+4	215	17	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	215	17	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	17		set __D0Put_GospersGliderGun, 37
+4	215	20	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	20		cmp 0, __D0Put_GospersGliderGun, __signed_stack_001Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	215	24	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	24		brtst 4, __ASM_Label_869, __D0Put_GospersGliderGun
+4	215	27	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	27		jmp __ASM_Label_870
+4	215	29	#line 215 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	29		add __Put_GospersGliderGun_7qG2_x_7qG2_000, __Put_GospersGliderGun_7qG2_x_7qG2_000, __constVal1
+4	216	33	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	33		jmp __ASM_Label_868
+4	216	35	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	35		set __Put_GospersGliderGun_7qG2_y_7qG2_000, 0
+4	216	38	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	38	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	38		mov __signed_stack_001Put_GospersGliderGun, __Put_GospersGliderGun_7qG2_y_7qG2_000
+4	216	40	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	216	40	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	40		set __D0Put_GospersGliderGun, 9
+4	216	43	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	43		cmp 0, __D0Put_GospersGliderGun, __signed_stack_001Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	216	47	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	47		brtst 4, __ASM_Label_877, __D0Put_GospersGliderGun
+4	216	50	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	50		jmp __ASM_Label_878
+4	216	52	#line 216 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	217	52		add __Put_GospersGliderGun_7qG2_y_7qG2_000, __Put_GospersGliderGun_7qG2_y_7qG2_000, __constVal1
+4	218	56	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	56		jmp __ASM_Label_876
+4	218	58	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	58		mov __signed_stack_001Put_GospersGliderGun, __Put_GospersGliderGun_7qG2_x_7qG2_000
+4	218	60	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	60	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	60		set __D0Put_GospersGliderGun, 1
+4	218	63	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	63		add __signed_stack_001Put_GospersGliderGun, __signed_stack_001Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	218	67	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	67	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	67		index __ArrHelper__Put_GospersGliderGun_232_0, board, __signed_stack_001Put_GospersGliderGun
+4	218	71	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	71		mov __signed_stack_002Put_GospersGliderGun, maxy
+4	218	73	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	73	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	73		set __signed_stack_003Put_GospersGliderGun, 2
+4	218	76	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	76	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	76		set __D0Put_GospersGliderGun, 5
+4	218	79	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	79		mul __D0Put_GospersGliderGun, __signed_stack_003Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	218	83	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	83		sub __signed_stack_002Put_GospersGliderGun, __signed_stack_002Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	218	87	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	87	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	87		set __D0Put_GospersGliderGun, 9
+4	218	90	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	90		sub __signed_stack_002Put_GospersGliderGun, __signed_stack_002Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	218	94	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	94	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	94	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	94		sub __signed_stack_002Put_GospersGliderGun, __signed_stack_002Put_GospersGliderGun, __Put_GospersGliderGun_7qG2_y_7qG2_000
+4	218	98	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	98	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	98		set __D0Put_GospersGliderGun, 1
+4	218	101	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	101		add __signed_stack_002Put_GospersGliderGun, __signed_stack_002Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	218	105	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	105	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	105		mov __signed_stack_003Put_GospersGliderGun, __Put_GospersGliderGun_7qG2_y_7qG2_000
+4	218	107	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	107	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	107		index __ArrHelper__Put_GospersGliderGun_232_1, __Put_GospersGliderGun_7qG2_sprite_7qG2_000, __signed_stack_003Put_GospersGliderGun
+4	218	111	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	111		mov __signed_stack_004Put_GospersGliderGun, __Put_GospersGliderGun_7qG2_x_7qG2_000
+4	218	113	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	113	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	113		index __D0Put_GospersGliderGun, __ArrHelper__Put_GospersGliderGun_232_1, __signed_stack_004Put_GospersGliderGun
+4	218	117	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	218	117	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	117		replace __ArrHelper__Put_GospersGliderGun_232_0, __ArrHelper__Put_GospersGliderGun_232_0, __signed_stack_002Put_GospersGliderGun, __D0Put_GospersGliderGun
+4	218	122	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	219	122		replace board, board, __signed_stack_001Put_GospersGliderGun, __ArrHelper__Put_GospersGliderGun_232_0
+4	218	127	#line 218 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	221	127	#line 221 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	222	127		jmp __ASM_Label_879
+4	221	129	#line 221 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	227	129	#line 227 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	228	129		jmp __ASM_Label_871
+4	227	131	#line 227 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	227	131	#line 227 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+4	228	131		subret __Put_GospersGliderGun_return
+5	246	0	#line 246 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	247	0	#pragma macro 5
+5	246	0	#line 246 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	246	0		arrinit __initBoard_7qG2_temp_7qG2_000, __constVal0, maxy
+5	246	4	#line 246 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	246	4	#line 246 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	247	4	#line 247 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	248	4		arrinit board, __initBoard_7qG2_temp_7qG2_000, maxx
+5	247	8	#line 247 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	247	8	#line 247 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	248	8	#line 248 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	249	8		arrinit __initBoard_7qG2_temp_7qG2_000, __constVal0, __constVal0
+5	248	12	#line 248 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	248	12	#line 248 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	244	12	#line 244 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	244	12	#line 244 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	244	12	#line 244 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	252	12	#line 252 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	245	12	#line 245 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	252	12	#line 252 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	253	12		subcall Put_GospersGliderGun, __Put_GospersGliderGun_return
+5	252	14	#line 252 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	265	14	#line 265 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+5	266	14		subret __initBoard_return
+6	302	0	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	302	0	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	303	0		arrinit __board_2, __constVal0, maxy
+6	302	4	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	303	4		arrinit board, __board_2, maxx
+6	302	8	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	302	8	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	303	8		arrinit __tmpboard_2, __constVal0, maxy
+6	302	12	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	303	12		arrinit tmpboard, __tmpboard_2, maxx
+6	302	16	#line 302 "D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc"
+6	303	16		subret ____initialize_global_data_return
+#CLUMPS
+Clump	Name	Offset	File
+0	main	0	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc
+1	countNeighbours	176	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc
+2	calculateGeneration	287	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc
+3	drawBoard	551	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc
+4	Put_GospersGliderGun	766	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc
+5	initBoard	899	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc
+6	__initialize_global_data	915	D:\Akten\Programmierung\NXC\gameoflife\gameoflife1001.nxc

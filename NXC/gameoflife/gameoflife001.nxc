@@ -1,0 +1,180 @@
+// Game of life
+// http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+// Code adapted from http://cboard.cprogramming.com/c-programming/128982-simple-life-game-code-near-end.html
+
+// THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 4.26 AND HIGHER.
+// Xander Soldaat (xander_at_botbench.com)
+// 30 September 2014
+// version 1
+
+// The blocks are BLOCKSIZE * BLOCKSIZE big
+// 4 seems to be a good value for this, 8 works well too
+// 2 is too small and don't even bother with 1
+
+int  BLOCKSIZE = 4;
+
+// Increase the chance of an initially live cell
+// by making this number smaller
+int seedChance = 2;
+
+
+#define NXT
+
+int screenWidth  = 100;
+int screenHeight =  64;
+
+
+
+
+#define sizeof()             SizeOf()
+
+#define eraseDisplay()       ClearScreen()
+
+#define sleep(ms)            Wait(ms)
+
+#define memset(a,v,s)        ArrayInit(a,v,s)
+
+#define memset2D(array, tmp, init_val, dimx, dimy) { \
+  ArrayInit(tmp, init_val, dimy);  \
+  ArrayInit(array, tmp, dimx);     \
+  ArrayInit(tmp,0,0);              \
+}
+
+
+
+// We need two boards, one for the current generation and one for calculating the next one
+// Optimization tip: use bits instead of entire bytes for the cell status
+char board[][];
+char tmpboard[][];
+int  ROWS, COLS;
+
+
+// Count thy neighbours
+int countNeighbours(int row, int col)
+{
+  int count = 0;
+  
+  for (int x = -1; x <= +1; x++)
+  {
+    for (int y = -1; y <= +1; y++)
+    {
+      if ((board[row + x][col + y] == 1) && (x != 0 || y != 0))
+        count++;
+    }
+  }
+  return count;
+}
+
+// Calculate the cells that will live and die for the next generation
+void calculateGeneration()
+{
+  int aliveNeighbours = 0;
+
+  // Clear the boardfor the next generation
+  int tsize=SizeOf(tmpboard);
+  memset(tmpboard, 0, tsize);
+
+  for (int row = 1; row < (ROWS - 1); row++)
+  {
+    for (int col = 1; col < (COLS - 1); col++)
+    {
+      aliveNeighbours = countNeighbours(row, col);
+
+      // Rules taken from http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+
+      // Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+      if(aliveNeighbours < 2)
+        tmpboard[row][col] = 0;
+
+      // Any live cell with two or three live neighbours lives on to the next calculateGeneration
+      if (aliveNeighbours >= 2  &&  aliveNeighbours <= 3 )
+        tmpboard[row][col] = board[row][col];
+
+      // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction
+      if(aliveNeighbours == 3 && board[row][col]==0)
+        tmpboard[row][col] = 1;
+
+      // Any live cell with more than three live neighbours dies, as if by overcrowding
+      if(aliveNeighbours > 3)
+        tmpboard[row][col] = 0;
+    }
+  }
+  // Copy the new board to the old one
+  memcpy(board, tmpboard, sizeof(tmpboard));
+}
+
+
+// Draw all the cells
+void drawBoard()
+{
+
+  int cbs, rbs, row, col;
+
+  // Wipe the screen
+  eraseDisplay();
+
+  for (row = 0; row < (ROWS - 2); ++row )
+  {
+    for (col = 0; col < (COLS - 2); ++col )
+    {
+      cbs= col * BLOCKSIZE;
+      rbs= row * BLOCKSIZE;
+      
+      // Draw all the "live" cells.
+      if ( board[row + 1][col + 1])
+        { RectOut(cbs, rbs, cbs + BLOCKSIZE, rbs + BLOCKSIZE, DRAW_OPT_FILL_SHAPE );}
+    }
+  }
+}
+
+
+
+// This adds some random live cells to the board
+void initBoard()
+
+{
+  int tmp[], row, col;
+  
+  ROWS = (screenHeight / BLOCKSIZE) + 2 ;
+  COLS = (screenWidth / BLOCKSIZE) + 2;
+  
+  memset2D(board,  tmp, 0, ROWS, COLS);
+  memset2D(tmpboard, tmp, 0, ROWS, COLS);
+  
+  
+  for (row = 1; row < (ROWS - 1); row++)
+  {
+    for (col = 1; col < (COLS - 1); col++)
+    {
+      board[row][col] = !(rand() % seedChance);
+    }
+  }
+}
+
+task main()
+{
+  initBoard();
+  drawBoard();
+  sleep(1000);
+  
+  int row, col;
+
+  while (true)
+  {
+    // Uncomment the below section if you want to randomly add a live cell to the board
+    // It can keep things interesting. Change the "2" to something a little higher or
+    // lower, depending on how often you want a new cell to magically come alive.
+
+    if (!(rand() % 2))
+    {
+      row = (abs(rand()) % (ROWS - 2)) + 1;
+      col = (abs(rand()) % (COLS - 2)) + 1;
+      //writeDebugStreamLine("random cell: x: %d, y: %d", row, col);
+      board[row][col] = 1;
+    }
+
+    calculateGeneration();
+    drawBoard();
+    sleep(200);
+  }
+}

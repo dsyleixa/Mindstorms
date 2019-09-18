@@ -1,0 +1,170 @@
+// Game of life
+// http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+// Code adapted from http://cboard.cprogramming.com/c-programming/128982-simple-life-game-code-near-end.html
+
+// THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 4.26 AND HIGHER.
+// Xander Soldaat (xander_at_botbench.com)
+// 30 September 2014
+// version 1
+
+
+// Increase the chance of an initially live cell
+// by making this number smaller
+
+#define seedChance  2
+
+
+#define  blockSize  2
+
+
+#define NXT
+
+#define screenWidth   100
+
+#define screenHeight   64
+
+#define sizeof()             SizeOf()
+
+#define eraseDisplay()       ClearScreen()
+
+#define sleep(ms)            Wait(ms)
+
+#define memset(a,v,s)        ArrayInit(a,v,s)
+
+#define memset2D(array, tmp, init_val, dimx, dimy) { \
+  ArrayInit(tmp, init_val, dimy);  \
+  ArrayInit(array, tmp, dimx);     \
+  ArrayInit(tmp,0,0);              \
+}
+
+
+
+int rowy = ( 64/ 2) + 2;
+int colx = (100/ 2) + 2;
+
+
+// We need two boards, one for the current generation and one for calculating the next one
+// Optimization tip: use bits instead of entire bytes for the cell status
+
+char board  [colx][rowy];
+char tmpboard[colx][rowy];
+
+
+
+
+// Count thy neighbours
+int countNeighbours(int col, int row)
+{
+  int count = 0;
+  for (int x = -1; x <= +1; x++)
+  {
+    for (int y = -1; y <= +1; y++)
+    {
+      if ((board[col + x][row + y] == 1) && (x != 0 || y != 0))
+        count++;
+    }
+  }
+  return count;
+}
+
+
+
+
+
+// Calculate the cells that will live and die for the next generation
+void calculateGeneration()
+{
+  int aliveNeighbours = 0, temp[], x,y;
+
+  // Clear the boardfor the next generation
+  memset2D(tmpboard, temp, 0, colx, rowy);
+
+  for (int row = 1; row < (rowy - 1); row++)
+  {
+    for (int col = 1; col < (colx - 1); col++)
+    {
+      aliveNeighbours = countNeighbours(col, row);
+
+      // Rules taken from http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+
+      // Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+      if(aliveNeighbours < 2)
+        tmpboard[col][row] = 0;
+
+      // Any live cell with two or three live neighbours lives on to the next calculateGeneration
+      if (aliveNeighbours >= 2  &&  aliveNeighbours <= 3 )
+        tmpboard[col][row] = board[col][row];
+
+      // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction
+      if(aliveNeighbours == 3 && board[col][row]==0)
+        tmpboard[col][row] = 1;
+
+      // Any live cell with more than three live neighbours dies, as if by overcrowding
+      if(aliveNeighbours > 3)
+        tmpboard[col][row] = 0;
+    }
+  }
+  // Copy the new board to the old one
+  memcpy(board, tmpboard, sizeof(tmpboard));
+}
+
+
+
+
+
+
+// Draw all the cells
+void drawBoard()
+{
+  // Wipe the screen
+  eraseDisplay();
+  for (int row = 0; row < (rowy - 2); row++)
+  {
+    for (int col = 0; col < (colx - 2); col++)
+    {
+      // Draw all the "live" cells.
+      if (board[col + 1][row + 1])
+        RectOut(col*blockSize, row*blockSize, (col*blockSize)+blockSize, (row*blockSize)+blockSize, DRAW_OPT_FILL_SHAPE);
+    }
+  }
+}
+
+
+void SetBar3(startx, starty) {
+
+  board[startx][starty]   = 1;
+  board[startx][starty+1] = 1;
+  board[startx][starty+2] = 1;
+  
+}
+
+
+
+// This adds some random live cells to the board
+void initBoard()
+{
+
+  board[2][2] = 1;
+  board[2][3] = 1;
+  board[2][4] = 1;
+
+}
+
+
+
+
+
+task main()
+{
+  initBoard();
+  drawBoard();
+  sleep(100);
+  
+  while (true)
+  {
+
+    calculateGeneration();
+    drawBoard();
+    sleep(5);
+  }
+}

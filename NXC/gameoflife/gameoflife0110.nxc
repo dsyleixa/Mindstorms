@@ -1,0 +1,543 @@
+// Conway's Game of Life
+// http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+// Code adapted from http://cboard.cprogramming.com/c-programming/128982-simple-life-game-code-near-end.html
+
+// Author: Xander Soldaat (xander_at_botbench.com)
+// 30 September 2014
+// version 1.11
+// ported to NXC be HaWe 01 October 2014
+
+
+
+const int blockSize = 2;
+
+#define frame         5
+
+#define NXT
+
+#define screenWidth  100
+
+#define screenHeight  64
+
+#define sizeof()             SizeOf()
+
+#define eraseDisplay()       ClearScreen()
+
+#define sleep(ms)            Wait(ms)
+
+#define memset(a,v,s)        ArrayInit(a,v,s)
+
+#define memset2D(array, tmp, init_val, dimx, dimy) { \
+  ArrayInit(tmp, init_val, dimy);  \
+  ArrayInit(array, tmp, dimx);     \
+  ArrayInit(tmp,0,0);              \
+}
+
+
+char LCDline[]={56,48,40,32,24,16,8,0};
+
+
+inline bool btnhit() {
+   return ( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+         || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+}
+
+
+inline int btnin() { // don't wait until BtnUp - if to wait: use getchar() !
+    int result = -1;
+    if (ButtonPressed(BTN1, false))
+      result = BTN1;
+    else if (ButtonPressed(BTN2, false))
+      result = BTN2;
+    else if (ButtonPressed(BTN3, false))
+      result = BTN3;
+    else if (ButtonPressed(BTN4, false))
+      result = BTN4;
+    return result;
+}
+
+
+
+
+inline void fillRect(int x1,int y1, int x2,int y2) {
+  RectOut(x1,y1, (x2-x1), (y2-y1), DRAW_OPT_FILL_SHAPE);
+}
+
+
+
+int maxx = ( screenWidth / blockSize) + 2*frame;
+int maxy = ( screenHeight/ blockSize) + 2*frame;
+
+
+
+// We need two boards, one for the current generation and one for calculating the next one
+// Optimization tip: use bits instead of entire bytes for the cell status
+
+char board[maxx][maxy];
+char tmpboard[maxx][maxy];
+
+
+
+
+// Count thy neighbours
+int countNeighbours(int cx, int ry)
+{
+  int count = 0;
+  for (int x = -1; x <= +1; x++)
+  {
+    for (int y = -1; y <= +1; y++)
+    {
+      if ((board[cx+x][ry+y] == 1) && (x != 0 || y != 0))
+        count++;
+    }
+  }
+  return count;
+}
+
+
+
+
+
+// Calculate the cells that will live and die for the next generation
+
+void calculateGeneration()
+{
+  int aliveNeighbours = 0, tmp[];
+
+  // Clear the boardfor the next generation
+  memset2D(tmpboard, tmp, 0, maxx, maxy);
+
+  for (int ry = 1; ry < (maxy-1); ++ry)
+  {
+    for (int cx = 1; cx < (maxx-1); ++cx)
+    {
+      if(btnhit() ) return;
+      
+      aliveNeighbours = countNeighbours(cx, ry);
+
+      // Rules taken from http://en.wikipedia.org/wiki/Conway's_Game_of_Life
+
+      // Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+      if(aliveNeighbours < 2)
+        tmpboard[cx][ry] = 0;
+
+      // Any live cell with two or three live neighbours lives on to the next calculateGeneration
+      if (aliveNeighbours >= 2  &&  aliveNeighbours <= 3 )
+        tmpboard[cx][ry] = board[cx][ry];
+
+      // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction
+      if(aliveNeighbours == 3 && board[cx][ry]==0)
+        tmpboard[cx][ry] = 1;
+
+      // Any live cell with more than three live neighbours dies, as if by overcrowding
+      if(aliveNeighbours > 3)
+        tmpboard[cx][ry] = 0;
+    }
+  }
+  // Copy the new board to the old one
+  memcpy(board, tmpboard, sizeof(tmpboard));
+}
+
+
+
+
+
+// Draw all the cells
+void drawBoard()
+{
+  eraseDisplay();
+
+  for (int ry = 0+frame; ry < (maxy-2); ry++)  {
+    for (int cx = 0+frame; cx < (maxx-2); cx++)  {
+      // Draw all the "live" cells.
+      if (board[cx+1][ry+1])
+
+        fillRect((cx-frame)*blockSize, (ry-frame)*blockSize,
+        ( (cx-frame)*blockSize)+blockSize, ( (ry-frame)*blockSize)+blockSize);
+    }
+  }
+}
+
+
+
+
+
+void Put_Bar3(int startx, int starty) {       // min x,y = frame size !!
+
+  board[startx][starty]   = 1;
+  board[startx][starty+1] = 1;
+  board[startx][starty+2] = 1;
+  
+}
+
+
+void Put_Bar4(int startx, int starty) {       // min x,y = frame size !!
+
+  board[startx][starty]     = 1;
+  board[startx][starty+1]   = 1;
+  board[startx+1][starty]   = 1;
+  board[startx+1][starty+1] = 1;
+}
+
+
+
+void Put_Bar5(int startx, int starty) {       // min x,y = frame size !!
+
+  board[startx][starty]   = 1;
+  board[startx][starty+1] = 1;
+  board[startx][starty+2] = 1;
+  board[startx][starty+3] = 1;
+  board[startx][starty+4] = 1;
+}
+
+
+
+void Put_R_pentomino(int startx, int starty) {    // min x,y = frame size !!
+
+  board[startx+1][starty+1]   = 1;
+
+  board[startx+2][starty ]    = 1;
+  board[startx+2][starty+1]   = 1;
+
+  board[startx+3][starty+1]   = 1;
+  board[startx+3][starty+2]   = 1;
+}
+
+
+
+void Put_Pi_heptomino(int startx, int starty) {    // min x,y = frame size !!
+
+  int x,y;
+
+  char sprite[][] = {  // sprite turned 90 degrees for design convenience!
+  {0,0,1,0,0},
+  {0,1,0,1,0},
+  {1,1,0,1,1}
+  } ;
+
+  for(x=0; x<5; ++x) {
+    for(y=0; y<3; ++y) {
+
+      board[startx-3+x][starty-5+y]=sprite[y][x] ;
+
+    }
+  }
+}
+
+
+
+void Put_23334M(int startx, int starty) {    // min x,y = frame size !!
+
+  int x,y;
+
+  char sprite[][] = {  // sprite turned 90 degrees for design convenience!
+  {0,0,1,0,0},
+  {1,1,0,0,0},
+  {0,1,0,0,0},
+  {1,0,0,1,0},
+  {0,0,0,0,1},
+  {0,1,0,0,1},
+  {0,0,1,0,1},
+  {0,1,0,0,0},
+  } ;
+
+  for(x=0; x<5; ++x) {
+    for(y=0; y<8; ++y) {
+
+      board[startx-8+x][maxy-(starty-8+y)]=sprite[y][x] ;
+
+    }
+  }
+}
+
+
+
+
+void Put_Glider(int startx, int starty) {    // min x,y = frame size !!
+
+  int x,y;
+
+  char sprite[][] = {  // sprite turned 90 degrees for design convenience!
+  {0,1,0,},
+  {0,0,1,},
+  {1,1,1,}
+  } ;
+  
+  for(x=0; x<3; ++x) {
+    for(y=0; y<3; ++y) {
+
+      board[startx-3+x][starty-3+y]=sprite[y][x] ;
+
+    }
+  }
+}
+
+
+
+void Put_LWSpaceship(int startx, int starty) {    // min x,y = frame size !!
+
+  int x,y;
+
+  char sprite[][] = {  // sprite turned 90 degrees for design convenience!
+  {1,0,0,1,0},
+  {0,0,0,0,1},
+  {1,0,0,0,1},
+  {0,1,1,1,1},
+
+  } ;
+
+  for(x=0; x<5; ++x) {
+    for(y=0; y<4; ++y) {
+
+      board[startx-4+x][starty-5+y]=sprite[y][x] ;
+
+    }
+  }
+}
+
+void Put_HWSpaceship(int startx, int starty) {    // min x,y = frame size !!
+
+  int x,y;
+
+  char sprite[][] = {  // sprite turned 90 degrees for design convenience!
+  {0,0,1,1,0,0,0},
+  {0,0,0,0,0,1,0},
+  {0,0,0,0,0,0,1},
+  {1,0,0,0,0,0,1},
+  {0,1,1,1,1,1,1},
+
+  } ;
+
+  for(x=0; x<7; ++x) {
+    for(y=0; y<5; ++y) {
+
+      board[startx-8+x][starty-5+y]=sprite[y][x] ;
+
+    }
+  }
+}
+
+
+
+
+
+
+void Put_GliderGun() {
+
+  int x,y;
+
+  char sprite[][] = {  // sprite turned 90 degrees for design convenience!
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+  {0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+  {0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+  } ;
+  
+  for(x=0; x<37; ++x) {   // NXT screen (0,0) is bottom left, not top left  !
+    for(y=0; y<9; ++y) {
+    
+      board[x+1+frame][maxy-9-y+1]=sprite[y][x] ;
+    }
+  }
+}
+
+
+
+
+
+void put_RandomPattern(int seedChance) {
+
+  for (int cx = 1; cx < (maxx - 1); cx++)
+   {
+     for (int ry = 1; ry < (maxy - 1); ry++)
+     {
+       board[cx][ry] = !(rand() % seedChance);
+     }
+   }
+}
+
+
+
+
+
+void initBoard()
+{
+   int temp[];
+
+   memset2D(board, temp, 0, maxx, maxy);
+
+
+}
+
+
+
+
+void presstostart() {
+  eraseDisplay();
+  TextOut(0,32,"start: press btn");
+  while (!btnhit() ) {Wait(10);}
+}
+
+
+
+inline int  toggleup(int in, int max)  { return (in<max? ++in : 0); }
+
+inline int  toggledn(int in, int max)  { return (in>0? --in : max); }
+
+
+
+int menu() {
+  int mmax = 8, i;
+
+  string str[];
+  static char ch=3;
+  char   btn, lch;
+
+  memset(str, 0, mmax);
+
+  str[0]="0 few   ";
+  str[1]="1       ";
+  str[2]="2       ";
+  str[3]="3 medium";
+  str[4]="4       ";
+  str[5]="5       ";
+  str[6]="6 many  ";
+  str[7]="7 exit  ";
+
+  ClearScreen();
+
+  for (i=0;i<mmax;++i) TextOut(0,LCDline[i], str[i]);
+
+  TextOut(0,LCDline[ch], str[ch], DRAW_OPT_INVERT);
+
+  do {
+    lch=ch;
+    NumOut(90,0, ch);
+    btn=getchar();
+    if (btn==BTNRIGHT) if(ch<mmax-1) ch++; else ch=0;
+    else
+    if (btn==BTNLEFT ) if(ch > 0) ch--; else ch=mmax-1;
+
+    TextOut(0,LCDline[lch], str[lch], DRAW_OPT_NORMAL);
+    TextOut(0,LCDline[ch], str[ch],   DRAW_OPT_INVERT);
+
+  } while (btn!= BTNCENTER);
+
+  return (ch);
+}
+
+
+
+int menu0() {
+  int mmax = 8;
+  
+  string str[];
+  static char ch=3;
+  char   btn, i, lch;
+
+  memset(str, 0, mmax);
+  
+  str[0]="0 Random       ";
+  str[1]="4 3-/4-/5-BAR  ";
+  str[2]="2 R-Pentomino  ";
+  str[3]="3 Pi-heptomino ";
+  str[4]="1 23334M Methus";
+  str[5]="5 Ships+Gliders";
+  str[6]="6 Glider Gun   ";
+  str[7]="7 Quit         ";
+
+newchoice:
+  ClearScreen();
+
+  for (i=0;i<mmax;++i) TextOut(0,LCDline[i], str[i]);
+
+  TextOut(0,LCDline[ch], str[ch], DRAW_OPT_INVERT);
+
+
+  do {
+    lch=ch;
+    NumOut(90,0, ch);
+    btn=getchar();
+    if (btn==BTNRIGHT) if(ch<mmax-1) ch++; else ch=0;
+    else
+    if (btn==BTNLEFT ) if(ch > 0) ch--; else ch=mmax-1;
+
+    TextOut(0,LCDline[lch], str[lch], DRAW_OPT_NORMAL);
+    TextOut(0,LCDline[ch], str[ch],   DRAW_OPT_INVERT);
+
+    
+  } while (btn!= BTNCENTER);
+  
+
+  initBoard();
+
+  if (ch==0) {i=menu();
+              if (i<=7) {
+                i=(6-i)*3+2;
+                put_RandomPattern(i);
+              }
+              else goto newchoice; }
+  else
+  if (ch==1)  {Put_Bar3(2*frame,      frame);
+              Put_Bar5(maxx/2,       maxy/2);
+              Put_Bar4(maxx-2*frame, maxy-2*frame);}
+  else
+  if (ch==2)  Put_R_pentomino(maxx/2, maxy/2);
+  else
+  if (ch==3)  Put_Pi_heptomino(maxx/2, maxy/2);
+  else
+  if (ch==4)  Put_23334M(maxx/2, maxy/2);
+  else
+  if (ch==5) {Put_Glider(2*frame,   maxy-2*frame);
+              Put_LWSpaceship(maxx/2, maxy/2+frame);
+              Put_HWSpaceship(maxx/2-3*frame, maxy/2-frame); }
+  else
+  if (ch==6)  Put_GliderGun();
+  else
+  if (ch==7)  StopAllTasks();
+
+  return (ch);
+}
+
+
+
+
+task main()
+{
+  unsigned long stime, g;
+  int choice;
+
+  SetSleepTimeout(0);
+  SetAbortFlag(BTNSTATE_NONE);
+
+  newmenu: menu0();
+  choice=BTNCENTER;
+  g=0;
+  
+  stime=CurrentTick();
+  srand(stime);
+
+  drawBoard();
+  sleep(1);
+
+  while (TRUE)
+  {
+    calculateGeneration();
+
+    drawBoard();
+    NumOut(0,0, ++g);
+    if(g==100) stime=(CurrentTick()-stime);
+    if(g>=100){
+      // TextOut(30,0,"t100:"); NumOut(60,0, stime/1000);
+    }
+    
+    if(btnhit() ) break;
+    
+  }
+  goto newmenu;
+}
