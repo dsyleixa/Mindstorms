@@ -1,0 +1,43 @@
+// PID controller: exactly approaching an encoder target by a motor
+// ver 4.9g
+
+// reported bug: sometimes overshooting (to be optimized)
+// featuring rotation speed setting   (to be optimized)
+
+// (c) HaWe 2013
+
+
+//forward:
+
+
+
+
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+
+
+
+
+
+task main() {
+
+  long  Target;
+  int   RotatSpeed; // custom values
+  
+
+  Target     = 90;               // set new motor rotation target
+  RotatSpeed = 80;               // set max rotation speed
+
+
+  PlayTone(TONE_C4,100);  Wait(100);
+
+
+  RotateMotorEx(OUT_A, RotatSpeed, Target, 100, false, true);
+
+
+  while (1);                   // wait for BtnCtr to abort
+
+}

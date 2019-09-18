@@ -1,0 +1,103 @@
+// PID simulator
+
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+Tone sweepUp[] = {TONE_C4, MS_50, TONE_E4, MS_50, TONE_G4, MS_50,TONE_C5, MS_50, TONE_E5, MS_50, TONE_G5, MS_50, TONE_C6, MS_200};
+
+
+inline long round(float f)
+{
+  if (f>=0) return (f + 0.5);
+  else  return (f - 0.5);
+}
+
+
+struct PIDstruc {
+  float out;
+  float err;
+  float errold;
+  float intgr;
+  float damp;
+  long  target;
+  float P;
+  float I;
+  float D;
+} ;
+
+float Kp=40, Ki=20, Kd=20;
+float P, I, D;
+int   Mo=100; // max out
+int   ltime=10; // loop time;
+
+PIDstruc aPID;
+
+long mEnc = 0;  // in real: MotorRotationCount
+
+task main() {
+
+  // init aPID
+  aPID.out=0;
+  aPID.err=1;
+  aPID.errold=1;
+  aPID.intgr =0;
+  aPID.damp  =0.8;
+  aPID.target=100;  // e.g.
+  aPID.P=Kp/Mo;
+  aPID.I=Ki/Mo;
+  aPID.D=Kd/Mo;
+
+  // loop
+  do {
+  
+    printf1( 0,48,"eOld=%6d"  , mEnc);
+    
+    aPID.err = aPID.target-mEnc;
+
+    aPID.intgr= aPID.damp*aPID.intgr + aPID.err;
+
+    aPID.out= (aPID.P*aPID.err) + (aPID.I*aPID.intgr) + (aPID.D*(aPID.err-aPID.errold));
+
+    if(aPID.err<2) aPID.out=0;
+    else
+    if(aPID.out>100)  aPID.out= 100;
+    else
+    if(aPID.out<-100) aPID.out=-100;
+    else
+    if ((aPID.out>0)&&(aPID.out<5))  aPID.out= 5;
+    else
+    if ((aPID.out<0)&&(aPID.out>-5)) aPID.out=-5;
+
+
+    if (abs(aPID.out)<10)  mEnc = mEnc + round(aPID.out / (ltime*3));
+    else
+    mEnc = mEnc + round(aPID.out / ltime);
+    
+    printf1( 0,56,"targ=%6d"  , aPID.target);
+    printf1( 0,40,"err =%6.1f", aPID.err);
+    printf1( 0,32,"out =%6.1f", aPID.out);
+
+    printf1( 0,16,"enc =%6d"  , mEnc);
+
+    
+    aPID.errold=aPID.err;
+  
+    while (BTNCENTER!= getchar());
+    
+  } while (abs(aPID.err)>1);
+  
+
+    printf1( 0,56,"targ=%6d"  , aPID.target);
+    printf1( 0,40,"err =%6.2f", aPID.err);
+    printf1( 0,32,"out =%6f",   aPID.out);
+
+    printf1( 0,16,"enc =%6d"  , mEnc);
+
+    PlayTones(sweepUp);
+    while (BTNCENTER!= getchar());
+
+}
+
+

@@ -1,0 +1,132 @@
+// PID controller: move motor to encoder target
+// ver 2.8
+// (c) HaWe 2013
+
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+
+inline long round(float f)
+{
+  if (f>=0) return (f + 0.5);
+  else  return (f - 0.5);
+}
+
+
+struct PIDstruct {
+  float out;                     // PID control output value
+  long  target;                  // set target
+  long  ltime;                   // loop time
+  long  curr;                    // current reading
+  float err;                     // current error
+  float errold;                  // previous error
+  float intgr;                   // integral of errors
+  float damp;                    // damp integral of errors
+  float OutMax;                  // max output (max motor pwr)
+  float OutMin;                  // min output (to avoid standstill)
+  float precis;                  // error precision to target
+  float P;                       // P, I, D in relation to MaxOut and loopTime
+  float I;                       // I: heavy load=50 - - - light load=30
+  float D;                       // D: avoid error getting worse
+
+} ;
+
+
+
+
+PIDstruct aPID;
+
+long Target;
+
+
+task main() {
+
+
+  // general init aPID
+  aPID.out=0;                        // PID control output value
+  aPID.target=0;                     // target
+  aPID.ltime=10;                     // loop time
+  aPID.curr=0;                       // current reading
+  aPID.err=0;                        // current error
+  aPID.errold=0;                     // previous error
+  aPID.intgr =0;                     // integral of errors
+  aPID.damp  =0.9;                   // damp integral of errors
+  aPID.OutMax=100;                   // max output (max motor pwr)
+  aPID.OutMin=5;                     // min output (to avoid standstill)
+  aPID.precis=2;                     // error precision to target
+  aPID.P=60/aPID.OutMax;             // P, I, D in relation to MaxOut and loopTime
+  aPID.I=60/aPID.OutMax;             // I: heavy load=50 - - - light load=30
+  aPID.D=220*aPID.ltime/aPID.OutMax; // D: avoid error getting worse
+  
+  
+  // new start of PID control with current values
+  
+  Target=1000;                                 // set new motor rotation target
+  
+  aPID.target=Target;
+  aPID.curr = MotorRotationCount(OUT_A);                    // get current input
+  aPID.err = aPID.target-aPID.curr;                         // error to target
+  
+  // loop
+  do {
+
+    printf1( 0,48,"cOld=%6d", aPID.curr);
+
+    if(aPID.intgr >(3*aPID.OutMax)) aPID.damp=0.6;          // damp integral
+    else                                                    // long distance
+    aPID.damp=0.9;                                          // short distance
+
+    aPID.intgr= aPID.damp*aPID.intgr + aPID.err;
+
+    aPID.out= (aPID.P*aPID.err) + (aPID.I*aPID.intgr) + (aPID.D*(aPID.err-aPID.errold));
+
+    if(abs(aPID.err)<=abs(aPID.precis)) aPID.out=0;         // near target: coast
+    else
+    if (abs(aPID.err)<=abs(aPID.precis+1)) Off(OUT_A);      // intermed brake
+    else
+    if(aPID.err<=aPID.precis) aPID.out=0;                   // intermed coast
+    else
+    if(aPID.out>aPID.OutMax)  aPID.out= aPID.OutMax;        // forward Out Max
+    else
+    if(aPID.out<-aPID.OutMax) aPID.out=-aPID.OutMax;        // reverse OutMax
+
+    else
+    if ((aPID.out>0)&&(aPID.out<aPID.OutMin))  aPID.out= aPID.OutMin;  // fwd OutMin
+    else
+    if ((aPID.out<0)&&(aPID.out>-aPID.OutMin)) aPID.out=-aPID.OutMin;  // rev OutMin
+
+
+    printf1( 0,56,"targ=%6d"  , aPID.target);
+    printf1( 0,40,"err =%6.1f", aPID.err);
+    printf1( 0,32,"out =%6.1f", aPID.out);
+
+
+    OnFwd(OUT_A, round(aPID.out));                          // action !
+
+    Wait(aPID.ltime);                                       // wait loop time
+
+    aPID.curr = MotorRotationCount(OUT_A);
+    printf1( 0,16,"cNew=%6d" , aPID.curr);
+
+
+    aPID.errold=aPID.err;                                   // save old error
+    aPID.err = aPID.target-aPID.curr;                       // error to target
+
+
+  } while (abs(aPID.err)>=aPID.precis);                     // target reached
+
+    Off(OUT_A);                                             // brake motor
+
+    printf1( 0,56,"targ=%6d"  , aPID.target);
+    printf1( 0,40,"err =%6.2f", aPID.err);
+    printf1( 0,32,"out =%6f",   aPID.out);
+
+    printf1( 0,16,"cNew=%6d"  , aPID.curr);
+
+    PlayTone(100,100);                                      // signal ready
+
+    while (BTNCENTER!= getchar());                          // wait for BtnCtr
+
+}

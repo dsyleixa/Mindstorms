@@ -1,0 +1,140 @@
+// PID controller: exactly approaching an encoder target by a motor
+// ver 4.4
+
+// optimized
+// both for free wheel and strong engine load and everything in between.
+
+// (c) HaWe 2013
+
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+
+inline long round(float f)
+{
+  if (f>=0) return (f + 0.5);
+  else  return (f - 0.5);
+}
+
+
+struct PIDstruct {
+  float out;                     // PID control output value
+  long  target;                  // set target
+  float OutMax;                  // max output (max motor pwr)
+  float precis;                  // error precision to target
+  float P;                       // P: basic propotional to error
+  float I;                       // I: integral: avoid peter out
+  float D;                       // D: derivative: avoid jerking
+                 // internal regulation
+  long  ltime;                   // loop time
+  long  curr;                    // current reading
+  float err;                     // current error
+  float errold;                  // previous error
+  float intgr;                   // integral of errors
+  float dampU;                   // damp integral of errors upper range
+  float dampM;                   // damp integral of errors medium range
+  float dampL;                   // damp integral of errors lower range
+
+} ;
+
+
+PIDstruct PID_A;
+
+long  Target, cmax, cmin;
+
+
+task main() {
+
+  // general init PID_A
+  
+  PID_A.out=0;                   // PID control output value
+  PID_A.target=0;                // target
+
+  PID_A.OutMax=100;              // max output (max motor pwr)
+  PID_A.precis=1;                // error precision to target
+
+  PID_A.P =0.60;                 // P: propotional to error
+  PID_A.I =0.85;                 // I: heavy load=0.70 - - - low load=0.40
+  PID_A.D =24;                   // D: avoid error getting worse
+
+  PID_A.ltime =10;               // loop time
+
+  PID_A.curr  =0;                // current reading
+  PID_A.err   =0;                // current error
+  PID_A.errold=0;                // previous error
+  PID_A.intgr =0;                // integral of errors
+  PID_A.dampU =0.95;             // damp integral of errors upper range
+  PID_A.dampM =0.85;             // damp integral of errors medium range
+  PID_A.dampL =0.7;              // damp integral of errors lower range
+
+
+  printf1( 0, 0,"P=%2.2f"  , PID_A.P);  // screen out P, I, D
+  printf1(37, 0,"I=%2.2f"  , PID_A.I);
+  printf1(76, 0,"D=%2.0f"  , PID_A.D);
+  
+  
+  // new start of PID control with current values
+
+
+  Target=90;                    // set new motor rotation target
+
+  float damp;
+  PID_A.target=Target;                         // assign target
+  PID_A.curr = MotorRotationCount(OUT_A);      // get current encoder reading
+  PID_A.err = PID_A.target - PID_A.curr;       // error to target
+
+
+  // appoach target loop
+
+  Yield();                                     // 1ms for VM to apply values
+  
+  do {
+
+                                                              // damp integral
+    if(abs(PID_A.intgr) >(2*PID_A.OutMax)) damp=PID_A.dampL;  // long distance or
+    else                                                      //    huge integral
+    if (abs(PID_A.err)  < PID_A.ltime)     damp=PID_A.dampU;  // very short distance
+    else                                   damp=PID_A.dampM;  // medium distance
+
+    PID_A.intgr= (damp * PID_A.intgr) + PID_A.err;
+    PID_A.out= (PID_A.P*PID_A.err) + (PID_A.I*PID_A.intgr) + (PID_A.D*(PID_A.err-PID_A.errold));
+
+    if(PID_A.out>PID_A.OutMax)  PID_A.out= PID_A.OutMax;   // forward OutMax
+    else
+    if(PID_A.out<-PID_A.OutMax) PID_A.out=-PID_A.OutMax;   // reverse OutMax
+
+    //**************************************************************************
+    OnFwd(OUT_A, round(PID_A.out));                     // action !
+
+    Wait(PID_A.ltime);                                  // wait loop time
+    //**************************************************************************
+
+    PID_A.curr  = MotorRotationCount(OUT_A);            // get new encoder value
+    PID_A.errold= PID_A.err;                            // save old error
+    PID_A.err   = PID_A.target-PID_A.curr;              // error to target
+
+    if (PID_A.curr>cmax) cmax=PID_A.curr;               // detect overshooting
+    if (PID_A.curr<cmin) cmin=PID_A.curr;               // detect overshooting
+
+  } while (abs(PID_A.err)>PID_A.precis);                // target reached
+
+
+  Off(OUT_A);                                      // finished - brake motor
+  PID_A.out=0;
+  PID_A.curr  = MotorRotationCount(OUT_A);
+  if (PID_A.curr>cmax) cmax=PID_A.curr;            // detect overshooting
+  if (PID_A.curr<cmin) cmin=PID_A.curr;            // detect overshooting
+
+  printf1( 0, 56,"targ=%6d",  Target);
+  printf1( 0, 48,"cNew=%6d"  , PID_A.curr);
+  printf1( 0, 40,"cmax=%6d"  , cmax);
+  printf1( 0, 32,"cmin=%6d"  , cmin);
+
+
+  PlayTone(100,100);                               // tone signal: finished !
+
+  while (BTNCENTER!= getchar());                   // wait for BtnCtr to abort
+
+}

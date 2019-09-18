@@ -1,0 +1,774 @@
+// PID controller: exactly approaching an encoder target by a motor
+// ver 0.83g
+
+// (c) HaWe 2013
+
+///////////////////////////////////////////////////////////////////////////////////////
+//void RotatePIDtoTarget (char port, long Target, float RotatSpeed); // absolute target
+//void RotatePIDdegrees  (char port, long Target, float RotatSpeed); // relative target
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#define debug_PID_A       // debug mode featuring graphic output
+//#define debug_PID_B       // debug mode featuring graphic output
+//#define debug_PID_C       // debug mode featuring graphic output
+
+
+//forward:
+void DisplayMask();
+
+
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+
+inline long round(float f) { return (f>0?(f+0.5):(f-0.5)); }
+
+//==============================================================================
+
+struct PIDstruct {
+                 // custom target values
+  long  target;                  // set target
+  int   tarpwm;                  // motor target speed
+                 // custom regulation parameters
+  float P;                       // P: basic propotional to error
+  float I;                       // I: integral: avoid peter out
+  float D;                       // D: derivative: avoid jerking
+  float precis;                  // error precision to target
+  int   regtime;                 // PID loop time
+  float damp;                    // damp the integral memory
+                 // internal control variables
+  char  runstate;                // monitors runstate
+  float outp;                    // PID control output value
+  int   maxout;                  // max output (max motor pwr)
+  float read;                    // current sensor reading
+  float err;                     // current error
+  float integr;                  // integral of errors
+  float cspeed;                  // current speed
+
+
+} ;
+
+
+PIDstruct PID_A, PID_B, PID_C;
+
+//==============================================================================
+
+
+task task_PID_A() {
+  float readstart, aspeed, damp, PWMpwr, readold, errorold;
+  long  cmax, cmin;                         // for monitoring
+  long  starttime, runtime, clock, dtime;   // timer
+
+  PID_A.runstate = 1;                           // indicates: task active!
+  PID_A.read     = MotorRotationCount(OUT_A);   // get current encoder reading
+  PID_A.err      = PID_A.target - PID_A.read;   // error to target
+  
+
+  //............................................................................
+  // init variables for graph output
+#ifdef debug_PID_A
+    ClearScreen();
+    DisplayMask();
+
+
+  int timex, oldtx, oldy=15, pwm0=15;           // values for graphic screen
+
+  float scrXratio, scrYratio, arc;
+
+  readstart  = PID_A.read;
+  arc=PID_A.target-PID_A.read;
+  scrXratio=abs(arc)/8;
+  if(PID_A.target<50) scrXratio=abs(arc)/4;
+
+  scrYratio=abs(arc)/40;
+#endif
+  //............................................................................
+
+  damp=0;                                 // damp the integral memory
+
+  starttime= CurrentTick();
+
+
+  // appoach target
+  _Astart:
+  do {
+
+    if ((PID_A.err==errorold)&& (PID_A.err>PID_A.precis)) damp=1;    // stalling
+    else damp=PID_A.damp;
+
+    PID_A.integr = (damp * PID_A.integr) + PID_A.err;
+    if(PID_A.integr > 3*PID_A.maxout) PID_A.integr = 3*PID_A.maxout; // cut away
+    else
+    if(PID_A.integr <-3*PID_A.maxout) PID_A.integr =-3*PID_A.maxout;
+    
+    PWMpwr= (PID_A.P*PID_A.err) + (PID_A.I*PID_A.integr) + (PID_A.D*(PID_A.err-errorold));
+
+
+    if(PWMpwr >  PID_A.maxout) PWMpwr=  PID_A.maxout;   // forward maxout
+    else
+    if(PWMpwr < -PID_A.maxout) PWMpwr= -PID_A.maxout;   // reverse maxout
+
+    //if (abs(PID_A.err)<=PID_A.precis)  Off(OUT_A);
+
+    dtime    = CurrentTick() - clock;
+    clock    = CurrentTick();
+    runtime  = clock - starttime;
+
+    PID_A.cspeed= (PID_A.read-readold)*100/dtime;  // rotat speed [degrees/100ms]
+
+    aspeed = abs(PID_A.cspeed) ;
+    
+    if (aspeed > PID_A.tarpwm)  {
+        PWMpwr = sign(PWMpwr)*PID_A.tarpwm;
+    }
+    
+    PID_A.outp = round(PWMpwr);
+
+#ifdef debug_PID_A
+{
+    //..........................................................................
+    //  for graph output
+    timex= runtime/scrXratio;
+    PointOut(timex,(PID_A.read-readstart)/scrYratio);
+    LineOut(oldtx, oldy, timex, pwm0+PID_A.cspeed*0.3);
+
+    oldtx=timex; oldy=pwm0+PID_A.cspeed*0.3;
+
+
+    printf1( 0,48,"%5.1f" , PID_A.cspeed);
+    printf1(36,08,"%5.1f" , PWMpwr);
+    //..........................................................................
+}
+#endif
+
+    //**************************************************************************
+
+    OnFwd(OUT_A, round(PID_A.outp));                    // action !
+
+    Wait(PID_A.regtime);                                // wait regulation time
+
+    //**************************************************************************
+
+    readold     = PID_A.read;                           // save old sensor
+    errorold    = PID_A.err;                            // save old error
+
+    PID_A.read  = MotorRotationCount(OUT_A);            // get new encoder value
+    PID_A.err   = PID_A.target-PID_A.read;              // new error to target
+
+    if (PID_A.read>cmax) cmax=PID_A.read;               // monitor overshooting
+    if (PID_A.read<cmin) cmin=PID_A.read;               // monitor overshooting
+
+#ifdef debug_PID_A
+    //..........................................................................
+    printf1(63, 56,"%-6.1f" , PID_A.read);
+    printf1(63, 48,"%-6d" , cmax);
+    printf1(63, 40,"%-6d" , cmin);
+    printf1(63, 32,"%-6.2f" , (PID_A.I*PID_A.integr) + (PID_A.D*(PID_A.err-errorold)));
+
+    //..........................................................................
+#endif
+    
+    if (abs(PID_A.err)<=PID_A.precis) { PID_A.runstate +=1 ; }
+
+  } while ((abs(PID_A.err)>=PID_A.precis) && (PID_A.runstate<=5)  );  // target reached
+
+  Off(OUT_A);                                      // finished - brake motor
+  PID_A.outp=0;
+  Wait(50);
+  PID_A.read = MotorRotationCount(OUT_A);
+  PID_A.runstate=1;
+
+  if (PID_A.read>cmax) cmax=PID_A.read;            // detect overshooting
+  if (PID_A.read<cmin) cmin=PID_A.read;            // detect overshooting
+  PID_A.err = PID_A.target-PID_A.read;
+
+#ifdef debug_PID_A
+  printf1(63, 56,"%-6.1f" , PID_A.read);
+  printf1(63, 48,"%-6d" , cmax);
+  printf1(63, 40,"%-6d" , cmin);
+  printf1(63, 32,"%-6d" , cmin);
+#endif
+
+  if ((abs(PID_A.err)>PID_A.precis))  {goto _Astart;}
+
+
+#ifdef debug_PID_A
+  //............................................................................
+  PointOut(timex,PID_A.read/scrYratio);
+  LineOut(oldtx, oldy, timex, pwm0);
+  LineOut(timex+2,PID_A.target/scrYratio, timex+10, PID_A.target/scrYratio);
+  LineOut(timex+2, pwm0, timex+10, pwm0);
+  //............................................................................
+#endif
+
+  PID_A.runstate=0;
+
+}
+
+//==============================================================================
+
+task task_PID_B() {
+  float readstart, aspeed, damp, PWMpwr, readold, errorold;
+  long  cmax, cmin;                         // for monitoring
+  long  starttime, runtime, clock, dtime;   // timer
+
+  PID_B.runstate = 1;                           // indicates: task active!
+  PID_B.read     = MotorRotationCount(OUT_B);   // get current encoder reading
+  PID_B.err      = PID_B.target - PID_B.read;   // error to target
+
+
+  //............................................................................
+  // init variables for graph output
+#ifdef debug_PID_B
+    ClearScreen();
+    DisplayMask();
+
+
+  int timex, oldtx, oldy=15, pwm0=15;           // values for graphic screen
+
+  float scrXratio, scrYratio, arc;
+
+  readstart  = PID_B.read;
+  arc=PID_B.target-PID_B.read;
+  scrXratio=abs(arc)/8;
+  if(PID_B.target<50) scrXratio=abs(arc)/4;
+
+  scrYratio=abs(arc)/40;
+#endif
+  //............................................................................
+
+  damp=0;                                 // damp the integral memory
+
+  starttime= CurrentTick();
+
+
+  // appoach target
+  _Bstart:
+  do {
+
+    if ((PID_B.err==errorold)&& (PID_B.err>PID_B.precis)) damp=1;    // stalling
+    else  damp=PID_B.damp;
+
+    PID_B.integr = (damp * PID_B.integr) + PID_B.err;
+    if(PID_B.integr > 3*PID_B.maxout) PID_B.integr = 3*PID_B.maxout; // cut away
+    else
+    if(PID_B.integr <-3*PID_B.maxout) PID_B.integr =-3*PID_B.maxout;
+
+    PWMpwr= (PID_B.P*PID_B.err) + (PID_B.I*PID_B.integr) + (PID_B.D*(PID_B.err-errorold));
+
+
+    if(PWMpwr >  PID_B.maxout) PWMpwr=  PID_B.maxout;   // forward maxout
+    else
+    if(PWMpwr < -PID_B.maxout) PWMpwr= -PID_B.maxout;   // reverse maxout
+
+    //if (abs(PID_B.err)<=PID_B.precis)  Off(OUT_B);
+
+    dtime    = CurrentTick() - clock;
+    clock    = CurrentTick();
+    runtime  = clock - starttime;
+
+    PID_B.cspeed= (PID_B.read-readold)*100/dtime;  // rotat speed [degrees/100ms]
+
+    aspeed = abs(PID_B.cspeed) ;
+
+    if (aspeed > PID_B.tarpwm)  {
+        PWMpwr = sign(PWMpwr)*PID_B.tarpwm;
+    }
+
+    PID_B.outp = round(PWMpwr);
+
+#ifdef debug_PID_B
+{
+    //..........................................................................
+    //  for graph output
+    timex= runtime/scrXratio;
+    PointOut(timex,(PID_B.read-readstart)/scrYratio);
+    LineOut(oldtx, oldy, timex, pwm0+PID_B.cspeed*0.3);
+
+    oldtx=timex; oldy=pwm0+PID_B.cspeed*0.3;
+
+    printf1( 0,48,"%5.1f" , PID_B.cspeed);
+    printf1(36,08,"%5.1f" , PWMpwr);
+    //..........................................................................
+}
+#endif
+
+    //**************************************************************************
+
+    OnFwd(OUT_B, round(PID_B.outp));                    // action !
+
+    Wait(PID_B.regtime);                                // wait regulation time
+
+    //**************************************************************************
+
+    readold     = PID_B.read;                           // save old sensor
+    errorold    = PID_B.err;                            // save old error
+
+    PID_B.read  = MotorRotationCount(OUT_B);            // get new encoder value
+    PID_B.err   = PID_B.target-PID_B.read;              // new error to target
+
+    if (PID_B.read>cmax) cmax=PID_B.read;               // monitor overshooting
+    if (PID_B.read<cmin) cmin=PID_B.read;               // monitor overshooting
+
+#ifdef debug_PID_B
+    //..........................................................................
+    printf1(63, 56,"%-6.1f" , PID_B.read);
+    printf1(63, 48,"%-6d" , cmax);
+    printf1(63, 40,"%-6d" , cmin);
+    printf1(63, 32,"%-6.2f" , (PID_B.I*PID_B.integr) + (PID_B.D*(PID_B.err-errorold)));
+
+    //..........................................................................
+#endif
+
+    if (abs(PID_B.err)<=PID_B.precis) { PID_B.runstate +=1 ; }
+
+  } while ((abs(PID_B.err)>=PID_B.precis) && (PID_B.runstate<=5)  );  // target reached
+
+  Off(OUT_B);                                      // finished - brake motor
+  PID_B.outp=0;
+  Wait(50);
+  PID_B.read = MotorRotationCount(OUT_B);
+  PID_B.runstate=1;
+
+  if (PID_B.read>cmax) cmax=PID_B.read;            // detect overshooting
+  if (PID_B.read<cmin) cmin=PID_B.read;            // detect overshooting
+  PID_B.err = PID_B.target-PID_B.read;
+
+#ifdef debug_PID_B
+  printf1(63, 56,"%-6.1f" , PID_B.read);
+  printf1(63, 48,"%-6d" , cmax);
+  printf1(63, 40,"%-6d" , cmin);
+  printf1(63, 32,"%-6d" , cmin);
+#endif
+
+  if ((abs(PID_B.err)>PID_B.precis))  {goto _Bstart;}
+
+
+#ifdef debug_PID_B
+  //............................................................................
+  PointOut(timex,PID_B.read/scrYratio);
+  LineOut(oldtx, oldy, timex, pwm0);
+  LineOut(timex+2,PID_B.target/scrYratio, timex+10, PID_B.target/scrYratio);
+  LineOut(timex+2, pwm0, timex+10, pwm0);
+  //............................................................................
+#endif
+
+  PID_B.runstate=0;
+
+}
+
+
+//==============================================================================
+
+task task_PID_C() {
+  float readstart, aspeed, damp, PWMpwr, readold, errorold;
+  long  cmax, cmin;                         // for monitoring
+  long  starttime, runtime, clock, dtime;   // timer
+
+  PID_C.runstate = 1;                           // indicates: task active!
+  PID_C.read     = MotorRotationCount(OUT_C);   // get current encoder reading
+  PID_C.err      = PID_C.target - PID_C.read;   // error to target
+
+
+  //............................................................................
+  // init variables for graph output
+#ifdef debug_PID_C
+    ClearScreen();
+    DisplayMask();
+
+
+  int timex, oldtx, oldy=15, pwm0=15;           // values for graphic screen
+
+  float scrXratio, scrYratio, arc;
+
+  readstart  = PID_C.read;
+  arc=PID_C.target-PID_C.read;
+  scrXratio=abs(arc)/8;
+  if(PID_C.target<50) scrXratio=abs(arc)/4;
+
+  scrYratio=abs(arc)/40;
+#endif
+  //............................................................................
+
+  damp=0;                                 // damp the integral memory
+
+  starttime= CurrentTick();
+
+
+  // appoach target
+  _Cstart:
+  do {
+
+    if ((PID_C.err==errorold)&& (PID_C.err>PID_C.precis)) damp=1;    // stalling
+    else  damp=PID_C.damp;
+
+    PID_C.integr = (damp * PID_C.integr) + PID_C.err;
+    if(PID_C.integr > 3*PID_C.maxout) PID_C.integr = 3*PID_C.maxout; // cut away
+    else
+    if(PID_C.integr <-3*PID_C.maxout) PID_C.integr =-3*PID_C.maxout;
+
+    PWMpwr= (PID_C.P*PID_C.err) + (PID_C.I*PID_C.integr) + (PID_C.D*(PID_C.err-errorold));
+
+
+    if(PWMpwr >  PID_C.maxout) PWMpwr=  PID_C.maxout;   // forward maxout
+    else
+    if(PWMpwr < -PID_C.maxout) PWMpwr= -PID_C.maxout;   // reverse maxout
+
+    //if (abs(PID_C.err)<=PID_C.precis)  Off(OUT_C);
+
+    dtime    = CurrentTick() - clock;
+    clock    = CurrentTick();
+    runtime  = clock - starttime;
+
+    PID_C.cspeed= (PID_C.read-readold)*100/dtime;  // rotat speed [degrees/100ms]
+
+    aspeed = abs(PID_C.cspeed) ;
+
+    if (aspeed > PID_C.tarpwm)  {
+        PWMpwr = sign(PWMpwr)*PID_C.tarpwm;
+    }
+
+    PID_C.outp = round(PWMpwr);
+
+#ifdef debug_PID_C
+{
+    //..........................................................................
+    //  for graph output
+    timex= runtime/scrXratio;
+    PointOut(timex,(PID_C.read-readstart)/scrYratio);
+    LineOut(oldtx, oldy, timex, pwm0+PID_C.cspeed*0.3);
+
+    oldtx=timex; oldy=pwm0+PID_C.cspeed*0.3;
+
+    printf1( 0,48,"%5.1f" , PID_C.cspeed);
+    printf1(36,08,"%5.1f" , PWMpwr);
+    //..........................................................................
+}
+#endif
+
+    //**************************************************************************
+
+    OnFwd(OUT_C, round(PID_C.outp));                    // action !
+
+    Wait(PID_C.regtime);                                // wait regulation time
+
+    //**************************************************************************
+
+    readold     = PID_C.read;                           // save old sensor
+    errorold    = PID_C.err;                            // save old error
+
+    PID_C.read  = MotorRotationCount(OUT_C);            // get new encoder value
+    PID_C.err   = PID_C.target-PID_C.read;              // new error to target
+
+    if (PID_C.read>cmax) cmax=PID_C.read;               // monitor overshooting
+    if (PID_C.read<cmin) cmin=PID_C.read;               // monitor overshooting
+
+#ifdef debug_PID_C
+    //..........................................................................
+    printf1(63, 56,"%-6.1f" , PID_C.read);
+    printf1(63, 48,"%-6d" , cmax);
+    printf1(63, 40,"%-6d" , cmin);
+    printf1(63, 32,"%-6.2f" , (PID_C.I*PID_C.integr) + (PID_C.D*(PID_C.err-errorold)));
+
+    //..........................................................................
+#endif
+
+    if (abs(PID_C.err)<=PID_C.precis) { PID_C.runstate +=1 ; }
+
+  } while ((abs(PID_C.err)>=PID_C.precis) && (PID_C.runstate<=5)  );  // target reached
+
+  Off(OUT_C);                                      // finished - brake motor
+  PID_C.outp=0;
+  Wait(50);
+  PID_C.read = MotorRotationCount(OUT_C);
+  PID_C.runstate=1;
+
+  if (PID_C.read>cmax) cmax=PID_C.read;            // detect overshooting
+  if (PID_C.read<cmin) cmin=PID_C.read;            // detect overshooting
+  PID_C.err = PID_C.target-PID_C.read;
+
+#ifdef debug_PID_C
+  printf1(63, 56,"%-6.1f" , PID_C.read);
+  printf1(63, 48,"%-6d" , cmax);
+  printf1(63, 40,"%-6d" , cmin);
+  printf1(63, 32,"%-6d" , cmin);
+#endif
+
+  if ((abs(PID_C.err)>PID_C.precis))  {goto _Cstart;}
+
+
+#ifdef debug_PID_C
+  //............................................................................
+  PointOut(timex,PID_C.read/scrYratio);
+  LineOut(oldtx, oldy, timex, pwm0);
+  LineOut(timex+2,PID_C.target/scrYratio, timex+10, PID_C.target/scrYratio);
+  LineOut(timex+2, pwm0, timex+10, pwm0);
+  //............................................................................
+#endif
+
+  PID_C.runstate=0;
+
+}
+
+
+//==============================================================================
+
+
+safecall void RotatePIDtoTarget(char port, long Target, float RotatSpeed) {
+
+
+  if (port==OUT_A) {
+
+    if(PID_A.runstate!=0) {        // stop PID task if already running
+      stop task_PID_A;
+      PlayTone(TONE_C7,100);
+      Off(OUT_A);
+      Wait(100);
+
+    }
+
+    PID_A.runstate=1;                // set runstate: PID active
+
+    // custom init PID_A
+    PID_A.target=Target;                   // assign target
+    PID_A.tarpwm=RotatSpeed;               // assign rotation speed
+  
+    // Reset PID control defaults
+    PID_A.outp    =0;                // PID control output value
+    PID_A.maxout  =100;              // absolute max possible output (max pwr)
+    PID_A.read    =0;                // current reading
+    PID_A.err     =0;                // current error
+    PID_A.integr  =0;                // integral of errors
+    PID_A.cspeed  =0;                // current speed
+
+
+    start task_PID_A;
+  }
+
+  else
+  if (port==OUT_B) {
+
+    if(PID_B.runstate!=0) {        // stop PID task if already running
+      stop task_PID_B;
+      PlayTone(TONE_C7,100);
+      Off(OUT_B);
+      Wait(100);
+
+    }
+
+    PID_B.runstate=1;                // set runstate: PID active
+
+    // custom init PID_B
+    PID_B.target=Target;                   // assign target
+    PID_B.tarpwm=RotatSpeed;               // assign rotation speed
+
+    // Reset PID control defaults
+    PID_B.outp    =0;                // PID control output value
+    PID_B.maxout  =100;              // absolute max possible output (max pwr)
+    PID_B.read    =0;                // current reading
+    PID_B.err     =0;                // current error
+    PID_B.integr  =0;                // integral of errors
+    PID_B.cspeed  =0;                // current speed
+
+    Wait(1);
+    start task_PID_B;
+  }
+
+  else
+  if (port==OUT_C) {
+
+    if(PID_C.runstate!=0) {        // stop PID task if already running
+      stop task_PID_C;
+      PlayTone(TONE_C7,100);
+      Off(OUT_C);
+      Wait(100);
+
+    }
+
+    PID_C.runstate=1;                // set runstate: PID active
+
+    // custom init PID_C
+    PID_C.target=Target;                   // assign target
+    PID_C.tarpwm=RotatSpeed;               // assign rotation speed
+
+    // Reset PID control defaults
+    PID_C.outp    =0;                // PID control output value
+    PID_C.maxout  =100;              // absolute max possible output (max pwr)
+    PID_C.read    =0;                // current reading
+    PID_C.err     =0;                // current error
+    PID_C.integr  =0;                // integral of errors
+    PID_C.cspeed  =0;                // current speed
+
+    Wait(1);
+    start task_PID_C;
+  }
+
+}
+
+//==============================================================================
+
+inline void RotatePIDdegrees(char port, long Target, float RotatSpeed)  {
+   RotatePIDtoTarget(port, Target+MotorRotationCount(port), RotatSpeed);
+   Wait(1);
+}
+
+
+//==============================================================================
+
+
+void SetPIDparamEx(char port,float P,float I,float D,float prec,int rtime, float damp) {  // custom PID parameters
+
+  if (port==OUT_A) {
+    PID_A.P       =P;             // P: propotional to error
+    PID_A.I       =I;             // I: avoid overshooting
+    PID_A.D       =D;             // D: avoid error getting worse
+    PID_A.precis  =prec;          // error precision to target
+    PID_A.regtime =rtime;         // PID regulation time
+    PID_A.damp    =damp;          // damp error integral
+    
+  } else
+
+  if (port==OUT_B) {
+    PID_B.P       =P;             // P: propotional to error
+    PID_B.I       =I;             // I: avoid overshooting
+    PID_B.D       =D;             // D: avoid error getting worse
+    PID_B.precis  =prec;          // error precision to target
+    PID_B.regtime=rtime;          // PID regulation time
+    PID_B.damp    =damp;          // damp error integral
+
+  } else
+
+  if (port==OUT_C) {
+    PID_C.P       =P;             // P: propotional to error
+    PID_C.I       =I;             // I: avoid overshooting
+    PID_C.D       =D;             // D: avoid error getting worse
+    PID_C.precis  =prec;          // error precision to target
+    PID_C.regtime=rtime;          // PID regulation time
+    PID_C.damp    =damp;          // damp error integral
+
+  }
+
+}
+//==============================================================================
+
+void SetPIDparam(char port,float P,float I,float D) {  // custom PID parameters
+
+  if (port==OUT_A) {
+    PID_A.P       =P;             // P: propotional to error
+    PID_A.I       =I;             // I: avoid overshooting
+    PID_A.D       =D;             // D: avoid error getting worse
+
+  } else
+
+  if (port==OUT_B) {
+    PID_B.P       =P;             // P: propotional to error
+    PID_B.I       =I;             // I: avoid overshooting
+    PID_B.D       =D;             // D: avoid error getting worse
+
+  } else
+
+  if (port==OUT_C) {
+    PID_C.P       =P;             // P: propotional to error
+    PID_C.I       =I;             // I: avoid overshooting
+    PID_C.D       =D;             // D: avoid error getting worse
+
+  }
+
+}
+//==============================================================================
+
+
+void PIDinit() {
+
+  for (char port=0; port<3; ++port) {
+    SetPIDparamEx(port,0.40, 0.65, 12, 1, 5, 0.75); // p,i,d, precis, reg_time, damp
+    Wait(1);
+  }
+}
+//==============================================================================
+
+
+//..........................................................................
+// display, monitor, and debug
+
+void DisplayMask() {
+
+  printf1(36, 56,"cNew","" );
+  printf1(36, 48,"cmax","" );
+  printf1(36, 40,"cmin","");
+  printf1(36, 32,"fPD","");
+  printf1(00, 08,"lout","");
+  printf1(70, 08,"pwm ","");
+}
+
+
+task Displayenc(){
+
+  while(1) {
+    printf1(14, 24,"%-6d", MotorRotationCount(OUT_A));
+    printf1(42, 24,"%-6d", MotorRotationCount(OUT_B));
+    printf1(70, 24,"%-6d", MotorRotationCount(OUT_C));
+
+    printf1(14, 16,"%d", PID_A.runstate);
+    printf1(42, 16,"%d", PID_B.runstate);
+    printf1(70, 16,"%d", PID_C.runstate);
+    
+    printf1(14,  0,"%-6d", PID_A.target);
+    printf1(42,  0,"%-6d", PID_B.target);
+    printf1(70,  0,"%-6d", PID_C.target);
+    
+
+    
+    Wait(50);
+  }
+}
+
+//..........................................................................
+
+
+
+task main() {
+
+  long Target;                     // custom values
+  int  RotatSpeed;
+  
+  PIDinit();
+  
+  start Displayenc;
+
+
+  while(true) {
+
+    Target     = 200;                // set new motor rotation target
+    RotatSpeed =  80;                // set max rotation speed
+
+
+    SetPIDparam(OUT_A, 0.5, 0.3,  9 );                    // p,i,d
+    RotatePIDdegrees(OUT_A, Target, RotatSpeed);
+
+
+    SetPIDparam(OUT_B, 0.4, 0.5, 12);                     // p,i,d
+    RotatePIDdegrees(OUT_B, Target, RotatSpeed);
+
+
+    SetPIDparam(OUT_C, 0.4, 0.4, 10);                     // p,i,d
+    RotatePIDdegrees(OUT_C, Target, RotatSpeed);
+
+    while ((PID_A.runstate!=0)||(PID_B.runstate!=0)||(PID_C.runstate!=0));
+
+
+
+    PlayTone(TONE_C4,100); Wait(100);
+    printf1(0,56,"%s","OK");
+
+
+    while (BTNCENTER!= getchar());      // wait for BtnCtr to abort
+    
+  }
+
+
+}

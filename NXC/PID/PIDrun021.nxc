@@ -1,0 +1,122 @@
+// PID controller: move motor to encoder target
+// ver 2.0
+// (c) HaWe 2013
+
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+
+inline long round(float f)
+{
+  if (f>=0) return (f + 0.5);
+  else  return (f - 0.5);
+}
+
+
+struct PIDstruct {
+  float out;
+  long  target;
+  float err;
+  float errold;
+  float intgr;
+  float damp;
+  float OutMax;
+  float OutMin;
+
+  float P;
+  float I;
+  float D;
+} ;
+
+
+int   ltime=10; // loop time;
+
+PIDstruct aPID;
+
+long motorTarget;
+
+long mEnc;  // MotorRotationCount
+
+task main() {
+
+  motorTarget=100;  // set new motor rotation target
+
+
+  // init aPID
+  aPID.out=0;
+  aPID.target=motorTarget;  // set target
+  aPID.err=0;
+  aPID.errold=0;
+  aPID.intgr =0;
+  aPID.damp  =0.9;
+  aPID.OutMax=100;
+  aPID.OutMin=5;
+
+  aPID.P=60/aPID.OutMax;             // P, I, D in relation to MaxOut and loopTime
+  aPID.I=50/aPID.OutMax;             // heavy load=50 - - - light load=30
+  aPID.D=200*ltime/aPID.OutMax;
+
+  // loop
+  do {
+    mEnc = MotorRotationCount(OUT_A);
+
+    printf1( 0,48,"eOld=%6d"  , mEnc);
+
+    aPID.err = aPID.target-mEnc;
+
+    if(aPID.intgr >(3*MaxOut)) aPID.damp=0.6;
+    else
+    aPID.damp=0.9;
+
+    aPID.intgr= aPID.damp*aPID.intgr + aPID.err;
+
+    aPID.out= (aPID.P*aPID.err) + (aPID.I*aPID.intgr) + (aPID.D*(aPID.err-aPID.errold));
+
+    if (abs(aPID.target-mEnc)<=3) Off(OUT_A);
+    else
+    if(aPID.err<=2) aPID.out=0;
+    else
+    if(aPID.out>100)  aPID.out= aPID.OutMax;
+    else
+    if(aPID.out<-100) aPID.out=-aPID.OutMax;
+
+    else
+    if ((aPID.out>0)&&(aPID.out<5))  aPID.out= 5;
+    else
+    if ((aPID.out<0)&&(aPID.out>-5)) aPID.out=-5;
+
+
+    printf1( 0,56,"targ=%6d"  , aPID.target);
+    printf1( 0,40,"err =%6.1f", aPID.err);
+    printf1( 0,32,"out =%6.1f", aPID.out);
+
+    if (abs(aPID.err)<5) Off(OUT_A);
+
+    OnFwd(OUT_A, round(aPID.out));
+
+    Wait(ltime);
+
+    mEnc = MotorRotationCount(OUT_A);
+    printf1( 0,16,"eNew=%6d" , mEnc);
+
+
+    aPID.errold=aPID.err;
+
+
+
+  } while (abs(aPID.target-mEnc)>=2);
+
+    Off(OUT_A);
+
+    printf1( 0,56,"targ=%6d"  , aPID.target);
+    printf1( 0,40,"err =%6.2f", aPID.err);
+    printf1( 0,32,"out =%6f",   aPID.out);
+
+    printf1( 0,16,"enc =%6d"  , mEnc);
+
+    PlayTone(100,100);
+    while (BTNCENTER!= getchar());
+
+}
