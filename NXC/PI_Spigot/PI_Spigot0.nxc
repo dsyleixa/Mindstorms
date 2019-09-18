@@ -1,0 +1,176 @@
+// the PI number
+// calculated by the Spigot algorithm
+// PL: NXC, enhanced firmware, BCC 3.3.8.11
+
+
+#define N 255 // the first 255 decimal digits (validated; customizable! )
+
+
+int _cur_x_=0, _cur_y_=56;      // cursor home for NXC  = upper left = (0,56)
+int _tab_width_=24;             // tab width by default = 24 = 4* 6-point letter
+int _page_=1;
+
+int FINISHED=INT_MAX;
+
+
+unsigned long _TEXTSTYLE_ = DRAW_OPT_NORMAL;   // text style by default
+
+#define cls()             { ClearScreen();  _cur_x_=0; _cur_y_=56; }
+
+#define gotoxy( x, y )    { _cur_x_=x; _cur_y_=y; }   // move cursor to position
+#define curxy( x, y )     { _cur_x_=x; _cur_y_=y; }   // move cursor to (alias)
+#define curx  ( x )       { _cur_x_=x; }              // move cursor to x-pos
+#define cury  ( y )       { _cur_y_=y; }              // move cursor to y-pos
+#define curhome           { _cur_x_=0; _cur_y_=56; }  // move cursor home
+#define settabwidth( t )  { _tab_width_ = t; }        // redefine tab width
+#define settextstyle( t ) { _TEXTSTYLE_ = t; }        // redefine text style
+
+#define endoflastline     ((_cur_x_ >=95)&&(_cur_y_ <=16))
+
+
+inline string strsplit(string &src, string mark) {
+  string s="";
+  int p=-1, l;
+  p=Pos(mark, src);
+  if (p>=0) {
+    l=strlen(mark);
+    s= SubStr(src, 0, p);
+    src=SubStr(src, p+l, strlen(src)-p);
+  }
+  return s;
+}
+
+
+string strexch(string src, string ex, string ch) {
+  string s;
+  s=strsplit(src,ex);
+  return (StrCat(s,ch,src));
+}
+
+
+// printfxy()
+// featuring "\i" for writing inverted
+//******************************************************************************
+#define printfxy( x_, y_, f_, v_) {      \
+  _cur_y_=y_;   string s1_, s2_, sv_;    \
+  s2_=f_;                                \
+  if (Pos("\i",s2_)>=0) {                \
+    _TEXTSTYLE_= DRAW_OPT_INVERT;        \
+    s2_=strexch(s2_,"\i","");            \
+  }                                      \
+  int len=0;                             \
+  if (Pos("%",s2_)==-1)  { sv_=s2_; }    \
+  else { sv_ = FormatVal(s2_, v_);  }    \
+  TextOut(x_, y_, sv_, _TEXTSTYLE_);     \
+  len=strlen(sv_);                       \
+  _cur_x_=x_+6*(len);                    \
+  _TEXTSTYLE_= DRAW_OPT_NORMAL;          \
+}
+
+
+// printfEx redefined as printf()
+// featuring \n, \t, and "\i" for writing inverted
+//******************************************************************************
+#define printfEx(_fmt, _val) {             \
+  int _x=_cur_x_; int _y=_cur_y_;          \
+  string _sf, _s;                          \
+  _sf=_fmt;                                \
+  while (Pos("\n",_sf)>=0) {               \
+    _s=strsplit(_sf,"\n");                 \
+    while (Pos("\t",_s)>=0) {              \
+      _x=(1+_x/_tab_width_)*_tab_width_;   \
+      _s=strexch(_s, "\t", ""); }          \
+    printfxy( _x, _y, _s, _val);           \
+    _x=0;  _y-=8;                          \
+  }                                        \
+  while (Pos("\t",_sf)>=0) {               \
+      _x=(1+_x/_tab_width_)*_tab_width_;   \
+      _sf=strexch(_sf, "\t", ""); }        \
+  if(_x>=94){_x=0;_y-=8;}                  \
+  printfxy( _x, _y, _sf, _val);            \
+}
+
+
+
+inline bool btnhit(){
+/******************************************************************************/
+   return ( ButtonPressed(BTN1, false) || ButtonPressed(BTN2, false)
+         || ButtonPressed(BTN3, false) || ButtonPressed(BTN4, false));
+}
+
+
+void statusln(int &page) {
+   if (page<INT_MAX) {printfxy(0,0,"page%2d-pressBtn  ", page++);}
+   else if (page>=INT_MAX)  {printfxy(0,0,"finished!pressBtn  ", "");}
+   while (!btnhit()); while (btnhit());
+   cls();
+
+}
+
+
+task main() {
+
+  cls();
+  
+  int  len = floor(10 * N/3) + 1 ;
+
+
+  int A[];
+
+  ArrayInit(A,2,len);
+  // for(int i = 0; i < len; ++i) { A[i] = 2;}
+
+  int nines    = 0;
+  int predigit = 0;
+
+  for(int j = 1; j < N + 1; ++j) {
+    int q = 0;
+
+    for(int i = len; i > 0; --i) {
+      int x  = 10 * A[i-1] + q*i;
+      A[i-1] = x % (2*i - 1);
+      q = x / (2*i - 1);
+    }
+
+    A[0] = q%10;
+    q    = q/10;
+
+    if (9 == q) {
+      ++nines;
+    }
+    else if (10 == q) {
+
+      printfEx("%d", predigit + 1);
+      if (endoflastline)  {statusln(_page_); }
+
+      for (int k = 0; k < nines; ++k) {
+      
+        printfEx("%d", 0);
+        if(endoflastline)  {statusln(_page_); }
+      }
+
+      predigit=0; nines = 0;
+      //predigit, nines = 0;
+    }
+    else {
+
+      printfEx("%d", predigit);
+      if(endoflastline)  {statusln(_page_); }
+      predigit = q;
+
+      if (0 != nines) {
+        for (int k = 0; k < nines; ++k) {
+
+          printfEx("%d", 9);
+          if(endoflastline)  {statusln(_page_); }
+        }
+
+        nines = 0;
+      }
+    }
+  }
+
+
+  printfEx("%d", predigit);
+  statusln(FINISHED);
+}
