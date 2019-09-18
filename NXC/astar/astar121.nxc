@@ -1,0 +1,543 @@
+/////////////////////////////////////////////////////////////////////////////
+//                           TamTam.c
+//                   Version 1.2.1 "Dijkstra"
+//              virtuelle Wegsuche auf dem Display
+//***************************************************************************
+//            getestet mit NXC enhanced firmware 1.32
+//***************************************************************************
+//  der A* (A-Stern, a-star) - Algorithmus fuer den NXT
+//  zur Wegsuche und Navigation an Hindernissen vorbei
+//***************************************************************************
+//  hier in der Variante nach Dijkstra
+//  (keine geschaetzten heuristischen Kosten H, also H=0 => F=G!
+//  größere Karten möglich, z.Zt. ca. 48x48 max.
+//  aber kaum Geschwindigkeitsverlust!
+//
+//  1.2.1 "magnetische" Zielsuche, verbesserte Anzeige
+//  1.2.0 Bresenham-Algorithmus zum Labyrinth-Zeichnen
+//  1.1.6 neue Rand-Definitionen
+//  1.0.4 am Schluss werden Routenanweisungen erstellt
+//  1.0.1 erkennt, wenn  kein Weg zum Ziel existiert
+//  0.8.9 Suchrichtung optimiert: direkte Wege werden sehr schnell gefunden
+//  0.3.8 Kurse optimiert: Kurs-Aenderungen verursachen hoehere Kosten
+//  0.2.9 schneiden von Hindernis-Kanten wird vermieden
+// (c) H. W. 2008
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+
+//********************************************************************
+char   xStart, yStart, xDest, yDest;
+
+const int MadlyEnormous=SHRT_MAX;
+const char occ=1;
+
+const char  MapSize=47;             // x*y fields
+
+char  sMapSize=MapSize;             // new alg
+char  radius;
+char  pMAX;
+char  pMIN;
+
+
+char Map  [sMapSize][sMapSize];  // besetzt=1 / frei=0;
+char xPrev[sMapSize][sMapSize];  // Abszisse von Vorgaenger (x)
+char yPrev[sMapSize][sMapSize];  // Ordinate von Vorgaenger (y)
+char dPrev[sMapSize][sMapSize];  // Richtung  zu Vorgaenger (d= 0-7)
+int  F[sMapSize][sMapSize];      // gesamte Wege-Kosten F
+char List[sMapSize][sMapSize];   // gehoert zu Liste:  undef=0 offen=1 geschlossen=2
+unsigned long timer=0;
+
+//********************************************************************
+
+char GetMap(char x, char y)                // Zustand des Feldes: 0=frei, 1= Hindernis
+{   return Map[x+radius][y+radius];}
+
+void SetMap(char x, char y, char val)
+{   Map[x+radius][y+radius]=val;}
+
+
+
+char GetxPrev(char x, char y)             // gespeicherter Vorgaenger: x-Koord.
+{   return xPrev[x+radius][y+radius];}
+
+void SetxPrev(char x, char y, char xPtr)
+{   xPrev[x+radius][y+radius]=xPtr;}
+
+
+
+char GetyPrev(char x, char y)             // gespeicherter Vorgaenger: y-Koord.
+{   return yPrev[x+radius][y+radius];}
+
+void SetyPrev(char x, char y, char yPtr)
+{   yPrev[x+radius][y+radius]=yPtr;}
+
+
+
+char GetdPrev(char x, char y)              // gespeicherter Vorgaenger: Richtung
+{   return dPrev[x+radius][y+radius];}
+
+void SetdPrev(char x, char y, char d)
+{   dPrev[x+radius][y+radius]=d;}
+
+
+
+int  GetF(int x, int y)                    //  Wege-Kosten F
+{   return F[x+radius][y+radius];}
+
+void SetF(int x, int y, int val)
+{   F[x+radius][y+radius]=val;}
+
+
+
+char GetList(char x, char y)               // Listen-Zugehoerigkeit (0, 1, 2)
+{   return List[x+radius][y+radius];}
+
+void SetList(char x, char y, char val)
+{   List[x+radius][y+radius]=val;}
+
+
+//********************************************************************
+#define printf1( _x, _y, _format1, _value1) {  \
+  string sval1 = FormatVal(_format1, _value1); \
+  TextOut(_x, _y, sval1); \
+}
+
+#define sleep Wait
+//********************************************************************
+
+void DrawPixel(char x, char y)   // Transformation der Koordinatensysteme:
+                                   // Nullpunkt= Mitte des Feldes!
+{
+  PointOut(radius+2+x, radius+2+y, DRAW_OPT_NORMAL);
+}
+
+//********************************************************************
+
+void ClearPixel (char x, char y)
+{
+   PointOut(radius+2+x, radius+2+y, DRAW_OPT_CLEAR );
+}
+
+//********************************************************************
+
+void SetMap_DrawPixel(char x, char y, char val )
+{
+  SetMap(x, y, val);
+  DrawPixel(x, y);
+}
+
+//********************************************************************
+
+void SetMap_DrawLine(int x0, int y0, int x1, int y1)  // Bresenham-Alg.
+{
+  int dx =  abs(x1-x0), sx = x0<x1 ? 1 : -1;
+  int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
+  int err = dx+dy, e2; /* error value e_xy */
+
+  for(;;){  /* loop */
+    SetMap_DrawPixel(x0,y0,occ);
+    if (x0==x1 && y0==y1) break;
+    e2 = 2*err;
+    if (e2 > dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+    if (e2 < dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+  }
+}
+
+//********************************************************************
+
+int GetNx(char x, char pos)  // 3 2 1   benachbarte x-Koordinaten
+{                            // 4   0
+   int nx;                   // 5 6 7
+
+   nx=MadlyEnormous;  // wenn ungueltiger Nachbar
+   if (((pos==1)||(pos==0)||(pos==7))&& (x<pMAX))  // <===========
+     {nx=x+1; }
+   else
+   if ((pos==2)||(pos==6))
+     { nx=x;  }
+   else
+   if (((pos==3)||(pos==4)||(pos==5))&& (x>pMIN))
+     {nx=x-1; }
+
+   return nx;
+}
+
+//********************************************************************
+
+int GetNy(char y, char pos)  // 3 2 1   benachbarte y-Koordinaten
+{                            // 4   0
+   int ny;                   // 5 6 7
+
+   ny=MadlyEnormous;  // wenn ungueltiger Nachbar
+   if (((pos==1)||(pos==2)||(pos==3))&& (y<=pMAX)) // <===========
+     { ny=y+1; }
+   else
+   if ((pos==4)||(pos==0))
+     { ny=y;  }
+   else
+   if (((pos==5)||(pos==6)||(pos==7))&& (y>pMIN))
+     { ny=y-1; }
+
+   return ny;
+}
+
+//********************************************************************
+
+bool CloseToTheEdge(char x, char y, char dir)      // 3 2 1   keine Hindernis-Kanten schneiden
+{                                                  // 4   0
+   bool edge;                                      // 5 6 7
+   short xm,xp,ym,yp;
+
+   edge=false;  // nur bei diagonalem Schritt beruecksichtigen!)
+
+     xm =(xm > pMIN ? x-1 : x);
+     xp =(xp < pMAX ? x+1 : x);  //  <===========
+     ym =(ym > pMIN ? y-1 : y);
+     yp =(yp < pMAX ? y+1 : y);  //  <===========
+
+
+     if (dir==1) {edge=((GetMap(xp,y)==occ)||(GetMap(x,yp)==occ));} // 0  2
+     else
+     if (dir==3) {edge=((GetMap(x,yp)==occ)||(GetMap(xm,y)==occ));} // 2  4
+     else
+     if (dir==5) {edge=((GetMap(xm,y)==occ)||(GetMap(x,ym)==occ));} // 4  6
+     else
+     if (dir==7) {edge=((GetMap(x,ym)==occ)||(GetMap(xp,y)==occ));} // 6  0
+
+   return edge;
+}
+
+
+//********************************************************************
+
+void ExpandNode(char xa, char ya)  // checkt Nachbarfelder von (xa, ya)
+{
+  short F, d, k, v, w, z;
+
+  for (d=0;d<=7;d++)
+  {
+       v=GetNx(xa,d); //  Nachbarn durchgehen:  3 2 1
+       w=GetNy(ya,d); //                        4   0
+                      //                        5 6 7
+       if ((d==0) ||(d==2) ||(d==4) ||(d==6))    // ((p%2)==0 arbeitet fehlerhaft!)
+       {k=10; }                                  // Kosten gerader Schritt: 10
+       else
+       {
+         k=14;                                   // Kosten diagonaler Schritt: 14
+         if(CloseToTheEdge(xa,ya,d)) continue;   // diagonal ist bei Hinderniskante verboten
+       }
+
+       if ((v<MadlyEnormous)&&(w<MadlyEnormous)) // gueltiger Nachbar ?!
+       {
+         z=GetMap(v,w);                          // Hindernis vorhanden?
+         if ( (z==0)&&(!(GetList(v,w)==2)))      // frei und nicht in geschlossener Liste
+         {
+           F=GetF(xa,ya)+k;                      // F: Kosten zu (v,w) ueber aktuelles Quadrat (xa,ya)
+
+           if (!(GetList(v,w)==1))          // wenn NICHT in offener Liste
+           {
+              SetList (v,w,1);              // dann in die offene uebernehmen
+              SetxPrev(v,w, xa);            // Vorgaenger: ^x-aktuell
+              SetyPrev(v,w, ya);            // Vorgaenger: ^y-aktuell
+              SetdPrev(v,w,  d);            // Richtung zum Vorgaenger (0-7)
+              if(d==GetdPrev(xa,ya)) F-=2;  // Kosten geringer, wenn keine Kursaenderung
+              SetF(v,w,F);                  // Kosten gesamt
+           } // if  (Nicht offen)
+           else
+           if (GetList(v,w)==1)             // wenn aber bereits in offener Liste
+            {
+               if (F<=GetF(v,w))               // Wegekosten G dorthin vergleichen:
+                                             // neuer Weg dahin: geringere Kosten als alte Wegekosten ?
+               {                             // dann ueberschreiben + neuen Weg im Quadrat einspeichern
+                SetxPrev(v,w, xa);           // Vorgaenger: ^x-aktuell
+                SetyPrev(v,w, ya);           // Vorgaenger: ^y-aktuell
+                SetdPrev(v,w,  d);           // Richtung zum Vorgaenger (0-7)
+                if(d==GetdPrev(xa,ya)) F-=2; // Kosten geringer, wenn keine Kursaenderung
+                SetF(v,w,F);                 // Kosten gesamt
+               }// if (neuer Weg besser)
+           } // else if (schon offen)
+
+         }//  if (nicht besetzt, nicht geschlossen)
+       } // if (gueltiger Nachbar)
+
+  }// for
+
+}//ExpandNode
+
+//********************************************************************
+//********************************************************************
+
+void AStar (char xStart, char yStart, char xDest, char yDest)
+{
+  int i, j, c=0;
+  char xAkt, yAkt, xOld, yOld, xd, yd, xDa, yDa;
+  int  FMin=MadlyEnormous;
+
+
+  xAkt=xDest;       // wir starten rueckwaerts und beginnen die Suche beim Ziel !
+  yAkt=yDest;       // Das Quadrat, von dem aus gesucht wird, heisst "aktuelles Quadrat"
+
+  SetList(xAkt, yAkt, 1);           // akt. Quadrat in Offene Liste (=1)
+  SetF (xAkt,yAkt,0);               // Kosten F=G+H; G=0, H=0;
+  SetList(xAkt, yAkt, 2);           // aktuelles Quadrat in geschlossene Liste uebernehmen
+  xd=abs(xDest-xStart);
+  yd=abs(yDest-yStart);
+
+  printf1(60,24, "%s", "paths=");   // Anzeige der Zahl der Zyklen/Wege
+  printf1(60,16, "%5d", c);
+  
+  int istart,  isign, jstart, jsign;
+
+  if (xDest>xStart)
+          {istart=pMIN;  isign= 1;}
+    else  {istart=pMAX;  isign=-1;}
+
+    if (yDest>yStart)
+          {jstart=pMIN;  jsign= 1;}
+    else  {jstart=pMAX;  jsign=-1;}
+
+
+  
+  // solange das andere Ende (der Start) nicht gefunden wurde:
+
+  while (GetList(xStart,yStart)!=2)
+  {
+    FMin=MadlyEnormous;
+     xOld=xAkt;
+     yOld=yAkt;
+    // suche in offener Liste (=1)das Feld mit kleinstem F
+
+
+
+    for (i=istart; isign*i<radius;i+=isign)   {
+       if (xAkt>xStart) {istart=pMIN;  isign= 1;}
+       else  {istart=pMAX;  isign=-1;}
+
+       if (yAkt>yStart)  {jstart=pMIN;  jsign= 1;}
+       else  {jstart=pMAX;  jsign=-1;}
+    
+       for (j=jstart; jsign*j<radius;j+=jsign)
+       {
+          if ((GetList(i,j)==1)&&(GetF(i,j)<FMin) )
+          {
+             FMin=GetF(i,j);
+             xAkt=i;    // wenn gefunden: nimm es als aktuelles Quadrat
+             yAkt=j;
+             xDa=abs(i-xStart);
+             yDa=abs(j-yStart);
+             if ((xDa<xd)||(yDa<yd))
+             {
+                SetList(xAkt, yAkt, 2);  // aktuelles Quadrat in geschlossene Liste
+                DrawPixel(xAkt,yAkt);
+                ExpandNode(xAkt, yAkt);  // Nachbarfelder untersuchen
+                c+=1;
+             }
+          } // if
+        } // for j
+        SetList(xAkt, yAkt, 2);     // aktuelles Quadrat in geschlossene Liste
+        //DrawPixel(xAkt,yAkt);
+        ExpandNode(xAkt, yAkt);     // Nachbarfelder untersuchen
+
+        c+=1;
+    } // for i
+
+
+    TextOut(0,56, "Akt(X,Y)");
+    NumOut(50,56,xAkt);
+    NumOut(80,56,yAkt);
+    DrawPixel(xAkt,yAkt);
+
+    printf1(60,24, "%s", "paths=");             // Anzeige der Zahl der Zyklen/Wege
+    printf1(60,16, "%5d", c);
+    
+    if((xAkt==xOld)&&(yAkt==yOld)&&(FMin==MadlyEnormous))
+     {
+        TextOut(0,48, "No Way!");       // Ziel ist unerreichbar!
+        
+        PlayTone(220,100); sleep(250);  // PlaySound(soundBeepBeep);
+        PlayTone(220,100); sleep(250);
+        sleep(2000);
+        break;
+     }
+
+  } // while
+
+  TextOut(50, 8, "fertig", 0);     // Anzeige, wenn fertig
+  ClearPixel(xStart,yStart);
+  sleep(1000);
+
+}
+
+//********************************************************************
+//********************************************************************
+
+
+void DrawMap()  //  Hindernisse und Start/Ziel zeichnen
+{
+   char x, y;
+
+   //--------------------
+   // Start & Destination
+   //--------------------
+
+   xStart = 15;       // Startpunkt definieren
+   yStart =  5;
+
+   xDest  =-15;       // Zielpunkt definieren
+   yDest  = 12;
+
+   // Hindernisse setzen:
+   // Hier kann man sich austoben und beliebige
+   // Hindernis-Punkte definieren
+
+   //------------------
+   // Walls all around
+   //------------------
+   
+   SetMap_DrawLine(pMIN, pMIN, pMIN, pMAX); // |...
+   
+   SetMap_DrawLine(pMAX, pMIN, pMAX, pMAX); // ...|
+   
+   SetMap_DrawLine(pMIN, pMIN, pMAX, pMIN); // ___
+   
+   SetMap_DrawLine(pMIN, pMAX, pMAX, pMAX); // ^^^
+
+   //------------------
+   // walls inside
+   //------------------
+
+   SetMap_DrawLine( 0,pMIN,  0, -9);
+
+   SetMap_DrawLine( 0,-7,    0, pMAX);
+
+   SetMap_DrawLine(-12,-2,   0, -2);
+
+   SetMap_DrawLine(pMIN,3,  -5, 3);
+
+   SetMap_DrawLine(-3, 3,    0, 3);
+
+
+//....................................................................
+
+  DrawPixel(xStart,yStart);      // Start als Punkt malen
+  DrawPixel(xDest,yDest);        // Ziel  als Punkt malen
+
+}
+
+//********************************************************************
+//********************************************************************
+
+void WalkThisWay()   // virtuelle Fahrt der berechneten Route
+{
+  char x, y, xn, yn;
+  int  dir, olddir, turn;
+
+  x=xStart;
+  y=yStart;
+  dir=0;
+  olddir=0;
+  turn=0;
+
+  printf1(0,56,"t[s]=%d", timer/1000);
+  
+  TextOut(60,56,"turn=");
+  printf1(60,48,"%4d", turn);
+
+  TextOut(60,40,"Hdng=");
+  printf1(60,32,"%4d", dir);
+
+  TextOut(60,24,"Pos XY ");
+  printf1(60,16,"%3d",x);  printf1(80,16,"%3d",y);
+  
+  sleep(500);
+
+  while (! ((x==xDest)&&(y==yDest)))
+  {
+    TextOut(60,24,"Pos XY ");
+    printf1(60,16,"%3d",x);  printf1(80,16,"%3d",y);
+    
+    DrawPixel(x, y);
+    sleep(500);
+
+    dir=180+(45*GetdPrev(x,y));
+    if (dir>=360) dir-=360;
+
+    turn=dir-olddir;
+    if (turn<-180) turn=turn+360;
+    if (turn> 180) turn=360-turn;
+
+    TextOut(60,56,"turn=");
+    printf1(60,48,"%4d", turn);
+    sleep(200);
+    TextOut(60,40,"Hdng=");
+    printf1(60,32,"%4d", dir);
+
+    sleep(400);
+
+    olddir=dir;
+    xn=GetxPrev(x,y);
+    yn=GetyPrev(x,y);
+    x=xn;
+    y=yn;
+
+   }
+  DrawPixel(x, y);
+  
+  TextOut(60,24,"Pos XY ");
+  printf1(60,16,"%3d",x);  printf1(80,16,"%3d",y);
+  
+  TextOut(50,8,"Ziel");
+  TextOut(50,0,"erreicht!");
+  sleep(1000);
+
+}
+
+//********************************************************************
+
+void initVar()
+{
+   short i,j;
+
+   radius=MapSize/2;
+   pMAX= (sMapSize/2)-1;
+   pMIN= -(MapSize/2);
+
+   for(i=0;i<MapSize;i++)
+   {
+      for (j=0;j<MapSize;++j)
+      {
+        Map[i][j]=0;             // Felder frei
+        xPrev[i][j]=0;           // Vorgaenger Nullpunkt
+        yPrev[i][j]=0;
+        F[i][j]=MadlyEnormous;   // Kosten gewaltig
+        List[i][j]=0;            // Liste undefiniert
+      }
+   }
+}
+//********************************************************************
+
+task main()
+{
+
+  ClearScreen();
+  SetSleepTimeout(0);
+  initVar();
+  DrawMap();
+  timer=CurrentTick();
+  
+  AStar( xStart,yStart, xDest,yDest );
+  timer=CurrentTick()-timer;
+  
+  while(true)
+  {
+
+    ClearScreen();
+    
+    DrawMap();
+    WalkThisWay();
+    sleep(2000);
+  }
+}
+//********************************************************************
