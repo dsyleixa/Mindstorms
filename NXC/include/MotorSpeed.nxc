@@ -1,0 +1,61 @@
+#include "nxcio.h"
+
+float VM_A, VM_B, VM_C;  // rotation speed, deg per 100msec
+float dummy;
+
+task MotorSpeed() {
+  float M_A, oldM_A;
+  float M_B, oldM_B;
+  float M_C, oldM_C;
+  float dtime;       // time interval for taking values
+  float rT = 100;    // speed time unit [ms]: degrees/rT
+  unsigned long ntime, otime;
+
+  oldM_A = MotorRotationCount(OUT_A);
+  oldM_B = MotorRotationCount(OUT_B);
+  oldM_C = MotorRotationCount(OUT_C);
+
+  otime = CurrentTick();
+
+  while (1) {
+     Wait(5);
+
+     M_A = MotorRotationCount(OUT_A);
+     M_B = MotorRotationCount(OUT_B);
+     M_C = MotorRotationCount(OUT_C);
+
+     ntime = CurrentTick();
+     dtime = ntime-otime;
+     otime = ntime;
+     
+     VM_A = (M_A - oldM_A)*rT/dtime;    // speed OUT_A
+     VM_B = (M_B - oldM_B)*rT/dtime;    // speed OUT_B
+     VM_C = (M_C - oldM_C)*rT/dtime;    // speed OUT_C
+
+     oldM_A = M_A;
+     oldM_B = M_B;
+     oldM_C = M_C;
+  }
+}
+
+
+task DisplayValues(){
+   while(1) {
+     printf1(0,56,"A=%4.0f",VM_A);
+     printf1(40,56,"dt=%d",dummy);
+   
+     Wait(10);
+   }
+
+}
+
+task main(){
+
+  start MotorSpeed;
+  start DisplayValues;
+  
+  OnFwd(OUT_A,20);
+  
+  while(1){Wait(100);}
+
+}

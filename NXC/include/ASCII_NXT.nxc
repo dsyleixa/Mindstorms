@@ -1,0 +1,98 @@
+// nxcstdio.h
+// providing a more ANSI C printf() compatible procedure
+
+int _cur_x_=0, _cur_y_=56;      // cursor home for NXC  = upper left = (0,56)
+int _tab_width_=24;             // tab width by default = 24 = 4* 6-point letter
+
+unsigned long _TEXTSTYLE_ = DRAW_OPT_NORMAL;   // text style by default
+
+#define cls()             {  ClearScreen();  _cur_x_=0; _cur_y_=56; }
+
+#define gotoxy( x, y )    { _cur_x_=x; _cur_y_=y; }   // move cursor to position
+#define curxy( x, y )     { _cur_x_=x; _cur_y_=y; }   // move cursor to (alias)
+#define curx  ( x )       { _cur_x_=x; }              // move cursor to x-pos
+#define cury  ( y )       { _cur_y_=y; }              // move cursor to y-pos
+#define curhome           { _cur_x_=0; _cur_y_=56; }  // move cursor home
+#define settabwidth( t )  { _tab_width_ = t; }        // redefine tab width
+#define settextstyle( t ) { _TEXTSTYLE_ = t; }        // redefine text style
+
+
+inline string strsplit(string &src, string mark) {
+  string s="";
+  int p=-1, l;
+  p=Pos(mark, src);
+  if (p>=0) {
+    l=strlen(mark);
+    s= SubStr(src, 0, p);
+    src=SubStr(src, p+l, strlen(src)-p);
+  }
+  return s;
+}
+
+
+string strexch(string src, string ex, string ch) {
+  string s;
+  s=strsplit(src,ex);
+  return (StrCat(s,ch,src));
+}
+
+
+// printfxy()
+// featuring "\i" for writing inverted
+//******************************************************************************
+#define printfxy( x, y, f, v) {      \
+  _cur_y_=y;   string s1, s2, sv;    \
+  s2=f;                              \
+  if (Pos("\i",s2)>=0) {             \
+    _TEXTSTYLE_= DRAW_OPT_INVERT;    \
+    s2=strexch(s2,"\i","");          \
+  }                                  \
+  int len=0;                         \
+  if (Pos("%",s2)==-1)  { sv=s2; }   \
+  else { sv = FormatVal(s2, v);  }   \
+  TextOut(x, y, sv, _TEXTSTYLE_);    \
+  len=strlen(sv);                    \
+  _cur_x_=x+6*(len);                 \
+  _TEXTSTYLE_= DRAW_OPT_NORMAL;      \
+}
+
+
+// printfEx redefined as printf()
+// featuring \n, \t, and "\i" for writing inverted
+//******************************************************************************
+#define printf(fmt, val) {            \
+  int x=_cur_x_; int y=_cur_y_;       \
+  string sf, s;                       \
+  sf=fmt;                             \
+  while (Pos("\n",sf)>=0) {           \
+    s=strsplit(sf,"\n");              \
+    while (Pos("\t",s)>=0) {          \
+      x=(1+x/_tab_width_)*_tab_width_;\
+      s=strexch(s, "\t", ""); }       \
+    printfxy( x, y, s, val);          \
+    x=0;  y-=8;                       \
+  }                                   \
+  while (Pos("\t",sf)>=0) {           \
+      x=(1+x/_tab_width_)*_tab_width_;\
+      sf=strexch(sf, "\t", ""); }     \
+  printfxy( x, y, sf, val);           \
+}
+
+
+//******************************************************************************
+task main() {
+  int i;
+  settabwidth(18);
+  cls();
+
+  for(;;++i) {       // (ascii char 0...31 not displayed)
+    printf("\i%3d",i); printf(" %c",i); printf("\t\i%3d",++i); printf(" %c\n",i);
+    if (_cur_y_<0) {
+      curxy(0,8);  printf("\t\t\t\t <%d>\n", 1+i/16);
+      printf("\t\t\t\t %s", "BTN");
+      if (getchar()==BTNLEFT) {i=(i>=31?i-=32:111);}
+      cls();
+    }
+    if (i>126) i=-1;
+  }
+}

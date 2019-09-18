@@ -1,0 +1,15 @@
+// test: printf()
+
+
+#include "stdio-test.h"
+
+task main() {
+
+
+  printf("%s\n", "Hello World");
+  printf("%s\n", "by John Hansen");
+  
+  Wait(3000);
+
+
+}

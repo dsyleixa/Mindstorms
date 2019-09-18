@@ -1,0 +1,19 @@
+#download    "Fixed_6.ric"
+
+string __gFTFontName;
+inline void SetFont(string name) { __gFTFontName = name; }
+
+#define printfg( _x, _y, _format1, _value1) { \
+  string sval1 = FormatNum(_format1, _value1); \
+  FontTextOut(_x, _y, __gFTFontName, sval1); \
+}
+
+task main() {
+   SetFont("Fixed_6.ric");
+   
+   printfg( 9,39,"%s", "print graphic test");
+   printfg(29,19,"%d", 1234);
+   printfg(19,13,"%5.2f", 123.456789);
+
+   while(1);
+}
