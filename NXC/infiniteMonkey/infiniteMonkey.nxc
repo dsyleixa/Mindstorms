@@ -1,0 +1,54 @@
+string hamlet="to be or not to be",   // pattern
+        monkey="                  ",   // default: 18x white space
+        buf2, buf3;
+
+char i=0, state;
+
+byte c;
+bool fertig=false;
+unsigned long count, sav;
+
+task main(){
+  SetSleepTimeout(0);
+  buf3=SubStr(hamlet, 0, state);
+
+  while(!fertig) {
+
+    for (i=0; i<18; i++) {
+      c=(rand()%27)+96;
+      if (c==96) c=32;  //  white space
+      monkey[i]=c;
+    }
+    count+=1;
+
+    //buf1=SubStr(monkey, 0, 18);
+    if (state<18)  buf2=SubStr(monkey, 0, state);
+
+    if (!(count%50)) {
+       TextOut(0,56, "            "); NumOut(0, 56, count);
+       TextOut(0,48, monkey);
+       TextOut(0, 0, "mV:            "); NumOut(30,  0, BatteryLevel());
+    }
+
+    if(buf2==buf3)  {
+      i=0;
+      while ( (monkey[i]==hamlet[i]) && (i<17) )  ++i;
+      if ( i>state )   sav=count;
+      state=i;
+      buf3= SubStr(monkey, 0, state);
+      TextOut(0,32, buf3+"_");
+      TextOut(0,24, "            "); NumOut(0,24, sav);
+    }
+
+
+    while (ButtonPressed(BTNCENTER, false)) ;  // freeze
+
+    if(monkey==hamlet) {
+      TextOut(0,48, monkey);
+      TextOut(0,16, "            "); NumOut(0, 16, count);
+      TextOut(0, 0, "mV:            "); NumOut(30,  0, BatteryLevel());
+      fertig=true;
+      while(1);
+    }
+  }
+}
