@@ -1,0 +1,273 @@
+#SYMBOLS
+Index	Identifier	Type	Flag	Data	Size	RefCount
+0	r	10	1	0	4	5
+1	i	10	1	4	4	9
+2	y	10	1	8	4	6
+3	__float_stack_003main	10	1	12	4	4
+4	x	10	1	16	4	6
+5	n	10	1	20	4	4
+6	__sqrt_7qG2_x_7qG2_000_inline_main	10	1	24	4	4
+7	t	10	1	28	4	7
+8	s	10	1	32	4	2
+9	j	10	1	36	4	2
+10	__float_stack_002main	10	1	40	4	8
+11	__DF0main	10	1	44	4	26
+12	__D0main	6	1	48	4	27
+13	__float_stack_001main	10	1	52	4	26
+14	__signed_stack_001main	6	1	56	4	4
+15	__constVal99	2	0	60	1	1
+16	____initialize_global_data_return	1	1	61	1	3
+17	__constVal32	2	0	62	1	1
+18	__constVal33	2	0	63	1	1
+19	__constVal1	2	0	64	1	4
+20	__constVal50	2	0	65	1	1
+21	__constVal64	2	0	66	1	1
+22	__constVal2	2	0	67	1	5
+23	__PointOutArgs	8	0	3	12	5
+24	__PointOutArgs.Result	2	1	68	1	5
+25	__PointOutArgs.Location	8	0	2	4	5
+26	__PointOutArgs.Location.X	4	1	72	2	5
+27	__PointOutArgs.Location.Y	4	1	74	2	5
+28	__PointOutArgs.Options	5	1	76	4	5
+#SOURCES
+Clump	Line	PC	Source
+0	2	0	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	0		subcall __initialize_global_data, ____initialize_global_data_return
+0	2	2	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	2	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	2		set __D0main, 0
+0	2	5	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	5		mov y, __D0main
+0	2	7	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	7		mov __float_stack_001main, y
+0	2	9	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	9	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	9		mov __DF0main, __constVal64
+0	2	11	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	11		cmp 0, __D0main, __float_stack_001main, __DF0main
+0	2	15	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	15		brtst 4, __ASM_Label_615, __D0main
+0	2	18	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	18		jmp __ASM_Label_616
+0	2	20	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	20		add y, y, __constVal1
+0	2	24	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	24		jmp __ASM_Label_614
+0	2	26	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	26		set __D0main, 0
+0	2	29	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	29		mov x, __D0main
+0	2	31	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	31		mov __float_stack_001main, x
+0	2	33	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	33	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	33		mov __DF0main, __constVal99
+0	2	35	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	35		cmp 0, __D0main, __float_stack_001main, __DF0main
+0	2	39	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	39		brtst 4, __ASM_Label_623, __D0main
+0	2	42	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	42		jmp __ASM_Label_624
+0	2	44	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	44		add x, x, __constVal1
+0	2	48	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	48		jmp __ASM_Label_622
+0	2	50	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	50		set __D0main, 0
+0	2	53	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	53		mov t, __D0main
+0	2	55	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	55		mov i, t
+0	2	57	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	57	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	57		mov r, t
+0	2	59	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	59	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	59	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	59		mov __float_stack_001main, x
+0	2	61	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	61	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	61		mov __DF0main, __constVal33
+0	2	63	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	63		div __float_stack_001main, __float_stack_001main, __DF0main
+0	2	67	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	67	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	67		mov __DF0main, __constVal2
+0	2	69	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	69		sub s, __float_stack_001main, __DF0main
+0	2	73	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	73	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	73	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	73		mov __float_stack_001main, y
+0	2	75	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	75	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	75		mov __DF0main, __constVal32
+0	2	77	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	77		div __float_stack_001main, __float_stack_001main, __DF0main
+0	2	81	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	81	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	81		mov __DF0main, __constVal1
+0	2	83	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	83		sub j, __float_stack_001main, __DF0main
+0	2	87	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	87	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	87	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	87		set __D0main, 0
+0	2	90	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	90		mov n, __D0main
+0	2	92	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	92		mov __float_stack_001main, n
+0	2	94	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	94	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	94		mov __DF0main, __constVal50
+0	2	96	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	96		cmp 0, __D0main, __float_stack_001main, __DF0main
+0	2	100	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	100		mov __signed_stack_001main, __D0main
+0	2	102	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	102		mov __float_stack_002main, t
+0	2	104	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	104	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	104		mov __float_stack_003main, __constVal2
+0	2	106	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	106	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	106	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	106		mul __float_stack_003main, __float_stack_003main, i
+0	2	110	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	110	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	110	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	110		mul __DF0main, __float_stack_003main, i
+0	2	114	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	114		add __sqrt_7qG2_x_7qG2_000_inline_main, __float_stack_002main, __DF0main
+0	2	118	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	18900	118	#line 18900 "NXCDefs.h"
+0	18901	118		sqrt __float_stack_002main, __sqrt_7qG2_x_7qG2_000_inline_main
+0	18900	121	#line 18900 "NXCDefs.h"
+0	2	121	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	121	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	121	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	121		mov __DF0main, __constVal2
+0	2	123	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	123		cmp 0, __D0main, __float_stack_002main, __DF0main
+0	2	127	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	127		and __D0main, __signed_stack_001main, __D0main
+0	2	131	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	131		tst 5, __D0main, __D0main
+0	2	134	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	134		brtst 4, __ASM_Label_641, __D0main
+0	2	137	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	137		jmp __ASM_Label_642
+0	2	139	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	139		add n, n, __constVal1
+0	2	143	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	143		jmp __ASM_Label_640
+0	2	145	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	145	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	145	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	145	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	145		mul __float_stack_001main, r, r
+0	2	149	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	149	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	149	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	149	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	149	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	149		mul __DF0main, i, i
+0	2	153	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	153		sub t, __float_stack_001main, __DF0main
+0	2	157	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	157	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	157	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	157		set __signed_stack_001main, 2
+0	2	160	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	160	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	160	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	160		mul __float_stack_001main, __signed_stack_001main, r
+0	2	164	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	164	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	164	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	164		mul __float_stack_001main, __float_stack_001main, i
+0	2	168	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	168	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	168	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	168		add i, __float_stack_001main, j
+0	2	172	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	172	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	172	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	172	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	172	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	172	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	172		add r, t, s
+0	2	176	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	176	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	176	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	176		jmp __ASM_Label_643
+0	2	178	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	178	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	178		mov __float_stack_001main, t
+0	2	180	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	180	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	180		mov __float_stack_002main, __constVal2
+0	2	182	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	182	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	182	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	182		mul __float_stack_002main, __float_stack_002main, i
+0	2	186	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	186	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	186	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	186		mul __DF0main, __float_stack_002main, i
+0	2	190	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	190		add __sqrt_7qG2_x_7qG2_000_inline_main, __float_stack_001main, __DF0main
+0	2	194	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	18900	194	#line 18900 "NXCDefs.h"
+0	18901	194		sqrt __float_stack_001main, __sqrt_7qG2_x_7qG2_000_inline_main
+0	18900	197	#line 18900 "NXCDefs.h"
+0	2	197	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	197	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	197	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	197		mov __DF0main, __constVal2
+0	2	199	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	199		cmp 0, __D0main, __float_stack_001main, __DF0main
+0	2	203	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	203		brtst 4, __ASM_Label_660, __D0main
+0	2	206	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	206		mov __float_stack_001main, x
+0	2	208	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	208	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	208		mov __DF0main, y
+0	2	210	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	210	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	210		mov __PointOutArgs.Location.X, __float_stack_001main
+0	2	212	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	212		mov __PointOutArgs.Location.Y, __DF0main
+0	2	214	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	214		set __PointOutArgs.Options, 0
+0	2	217	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	217		syscall 14, __PointOutArgs
+0	2	220	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	220		mov __D0main, __PointOutArgs.Result
+0	2	222	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	222	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	222	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	222	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	222		jmp __ASM_Label_625
+0	2	224	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	224	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	224		jmp __ASM_Label_617
+0	2	226	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	226	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	226		set __D0main, 1
+0	2	229	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	229		tst 5, __D0main, __D0main
+0	2	232	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	232		brtst 4, __ASM_Label_666, __D0main
+0	2	235	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	2	235	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	235		jmp __ASM_Label_665
+0	2	237	#line 2 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+0	3	237		exit -1, -1
+1	5	0	#line 5 "C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc"
+1	6	0		subret ____initialize_global_data_return
+#CLUMPS
+Clump	Name	Offset	File
+0	main	0	C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc
+1	__initialize_global_data	240	C:\DOKUME~1\user1\LOKALE~1\Temp\temp.nxc
