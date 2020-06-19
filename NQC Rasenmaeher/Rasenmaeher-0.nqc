@@ -1,0 +1,254 @@
+//Rasenmaeher
+
+//-----------Compiler----------//
+#define and &&
+#define or ||
+#define endif }
+#define begin {
+
+//-----------2-Motoren-Antrieb----------//
+#define CommNone -1         // Bewegung undefiniert
+#define BewegStop 0         // alle Mot. stop bzw. float
+
+#define BewegVor 1          // beide Mot. vor
+#define BewegRueck 2        // beide Mot. zurück
+
+#define BewegLiDreh  3      // Mot. gegenläufig links
+#define BewegReDreh  4      // Mot. gegenläufig rechts
+
+#define BewegLiBogen 5      // Mot. li steht, rechts dreht
+#define BewegReBogen 6      // Mot. re steht, links dreht
+
+
+
+//-----------Lego-Touch-Sensoren----------//
+#define dRaw 10
+#define BumpTimout 70
+int RawBeide;
+int RawLinks;
+int RawRechts;
+int RawMin;
+
+
+//-----------Licht-Sensoren----------//
+#define dLicht 100
+
+//-----------Programmsteuerung----------//
+#define MaxThreadTime 450
+
+
+
+// -----------------------------------------------------------------------
+
+int vCruise;                   // Verhalten ohne Störung => geradeaus !
+
+task cruise () {
+    vCruise=BewegVor;          // aktiviert sich als unterste Ebene von alleine
+    while (true) Wait(50);
+}
+
+// -----------------------------------------------------------------------
+
+int vAusweichen;         // Verhalten bei Lichtwechsel (Untergrund)
+int LichtMittelw;
+
+task ausweichen() {
+      while (true){
+
+         if  (abs(SENSOR_3 -LichtMittelw) < dLicht)
+         begin      // rechter U. verändert
+            PlaySound (SOUND_CLICK);                     // => nach links drehen
+            vAusweichen=BewegLiBogen;
+            vAusweichen=CommNone;
+         endif
+         else if  (abs(SENSOR_1 -LichtMittelw) < dLicht) // linker U. verändert
+         begin
+            PlaySound (SOUND_CLICK);                     // => nach rechts drehen
+            vAusweichen=BewegReBogen;
+            vAusweichen=CommNone;
+         endif
+     }
+}
+
+// -----------------------------------------------------------------------
+
+int bumpcount;
+int vWenden;
+
+task wenden () {           // Verhalten beim Anstoßen vorn (Stoßstangen)
+     while (true){
+        if ((SENSOR_2 >(RawBeide-dRaw)) and (SENSOR_2 <(RawBeide+dRaw)))
+        begin
+           bumpcount += 1;
+           PlaySound (SOUND_LOW_BEEP);
+           ClearTimer (0);
+
+           vWenden=BewegStop;     Wait(20);
+           vWenden=BewegRueck;    Wait(300);
+           vWenden=BewegReDreh;       Wait(30);
+           if (bumpcount>4)    Wait(100);    //rausdrehen
+        endif
+        else
+        if ((SENSOR_2 > (RawLinks-dRaw)) and (SENSOR_2 < (RawLinks+dRaw)))
+        begin
+           PlaySound (SOUND_DOWN);
+           bumpcount += 1;
+           ClearTimer (0);
+           vWenden=BewegStop;    Wait(20);
+           vWenden=BewegRueck;   Wait(150);
+           vWenden=BewegReDreh;      Wait(20);
+           if (bumpcount>4) Wait(100);  //rausdrehen
+        endif
+        else
+        if((SENSOR_2 > (RawRechts-dRaw)) and (SENSOR_2 < (RawRechts+dRaw)))
+        begin
+           PlaySound (SOUND_FAST_UP);
+           bumpcount += 1;
+           ClearTimer (0);
+           vWenden=BewegStop;    Wait(20);
+           vWenden=BewegRueck;   Wait(200);
+           vWenden=BewegLiDreh;      Wait(15);
+           if (bumpcount>4) Wait(100);   //rausdrehen
+         endif
+
+         vWenden=CommNone;
+   }
+}
+
+// -----------------------------------------------------------------------
+
+int vRueckAbbr;
+
+task rueckAbbr () {                   // Verhalten beim Rückwärts-Anstoßen
+    while (true){
+      if (SENSOR_2 < RawMin)
+      begin
+         PlaySound (SOUND_DOWN);
+
+         vRueckAbbr=BewegStop;            // erst abstoppen
+         vRueckAbbr=BewegVor;   Wait(2);  // abbremsen + hintere Stoßstange entlasten
+         vRueckAbbr=BewegStop;
+         Wait(MaxThreadTime);    // warten, bis alle anderen Tasks durch sind
+         vRueckAbbr=CommNone;              // zurück zur Tagesordnung!
+      endif
+    }
+}
+
+// -----------------------------------------------------------------------
+
+int vNotStop;
+
+task NotStopp () {                     // Verhalten bei Notstopp
+     while (true){
+        if ((SENSOR_1 < RawMin) and (SENSOR_2 < RawMin) and (SENSOR_3 < RawMin))
+        begin                        // NOTSTOPP-BEDINGUNG: alle Sensoren gleichz. gedrückt!
+             InitCommNone();         // alle Verhaltensvariablen auf CommNone
+             vNotStop=BewegStop;     // MotorCommand erhält BewegStop über arbitrate
+             PlaySound (SOUND_UP);
+             PlaySound (SOUND_DOWN);
+             Wait (MaxThreadTime);   // warten, bis alle anderen Tasks durch sind
+             //break;                // kein CommNone, also kein Return  nach Durchlauf!
+         endif
+     }
+}
+
+
+
+// -----------------------------------------------------------------------
+
+int T;
+
+task deepThought () {
+     while (true){
+        T=Timer(0);                 // Timer-Wert (Stoppuhr) abfragen
+        if (T > BumpTimout)        // nach TimeOut: Bump-Gedächtnis löschen
+        //begin
+           bumpcount=0;
+        //endif
+     }
+}
+
+// =======================================================================
+
+int MotorCommand;
+task arbitrate () {         // Hier werden die Verhaltens-Prioritäten festgelegt!
+    while(true) {
+       if (vCruise != CommNone)       MotorCommand = vCruise;    // niedrigste Pr.
+       if (vAusweichen != CommNone)   MotorCommand = vAusweichen;
+       if (vWenden != CommNone)       MotorCommand = vWenden;
+       if (vRueckAbbr != CommNone)    MotorCommand = vRueckAbbr;
+       if (vNotStop != CommNone)      MotorCommand = vNotStop;   // höchste Pr.
+
+
+       MotorControl ();     // MotorCommand-Wert aktiviert den entsprechenden Task
+   }                        // MotorControl übernimmt dann die einfachsten Motorbefehle
+}
+
+sub MotorControl () {
+   if      (MotorCommand == BewegVor)      OnFwd (OUT_A + OUT_C);
+   else if (MotorCommand == BewegRueck)    OnRev (OUT_A + OUT_C);
+   else if (MotorCommand == BewegLiDreh)  {OnRev (OUT_A); OnFwd (OUT_C);}
+   else if (MotorCommand == BewegReDreh)  {OnRev (OUT_C); OnFwd (OUT_A);}
+   else if (MotorCommand == BewegLiBogen) {Float (OUT_A); OnFwd (OUT_C);}
+   else if (MotorCommand == BewegReBogen) {Float (OUT_C); OnFwd (OUT_A);}
+   else if (MotorCommand == BewegStop)     Float (OUT_A + OUT_C);
+
+}
+
+// =======================================================================
+
+task main ()
+{
+   init();
+   InitCommNone();
+
+   start cruise;
+   start wenden;
+   start arbitrate;
+   start rueckAbbr;
+   start NotStopp;
+   start deepThought;
+}
+
+// =======================================================================
+
+sub init () {
+   SetTxPower (TX_POWER_HI);
+   ClearMessage();
+
+   SetSensor(SENSOR_2, SENSOR_TOUCH);          // Stoßstangen
+   SetSensorMode(SENSOR_2, SENSOR_MODE_RAW);
+
+   SetSensor(SENSOR_1, SENSOR_TOUCH);          // Licht links
+   SetSensorMode(SENSOR_1, SENSOR_MODE_RAW);
+
+   SetSensor(SENSOR_3, SENSOR_TOUCH);          // Licht rechts
+   SetSensorMode(SENSOR_3, SENSOR_MODE_RAW);
+
+   SelectDisplay(DISPLAY_SENSOR_2);
+   
+   bumpcount=0;
+   ClearTimer(0);
+
+   RawLinks=  295;     // 3,6 kOhm
+   RawRechts= 178;     // 1,5 kOhm
+   RawBeide=  130;
+   RawMin=     70;     // 470 Ohm = Innenwid. Legoschalter
+
+   vNotStop=CommNone;  // NotStop gesondert auf "undefiniert"
+}
+
+sub InitCommNone ()   // alle Verhaltensweisen auf "undefiniert"
+{
+   vCruise=CommNone;
+   vWenden=CommNone;
+   vAusweichen=CommNone;
+   vRueckAbbr=CommNone;
+
+}
+
+
+
+
+
+
